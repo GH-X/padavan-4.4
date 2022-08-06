@@ -6,31 +6,31 @@ mount -t sysfs sysfs /sys
 
 size_etc="6M"
 
-if [ "$1" == "512" ] ; then
+if [ "$1" == "512" ]; then
 	size_tmp="40M"
 	size_var="5M"
 	tcp_rmem='20480 87380 8388608'
 	tcp_wmem='20480 87380 8388608'
 	tcp_mem='32768 65536 98304'
-elif [ "$1" == "256" ] ; then
+elif [ "$1" == "256" ]; then
 	size_tmp="32M"
 	size_var="4M"
 	tcp_rmem='16384 87380 4194304'
 	tcp_wmem='16384 87380 4194304'
 	tcp_mem='16384 32768 49152'
-elif [ "$1" == "128" ] ; then
+elif [ "$1" == "128" ]; then
 	size_tmp="24M"
 	size_var="3M"
 	tcp_rmem='12288 87380 2097152'
 	tcp_wmem='12288 87380 2097152'
 	tcp_mem='8192 16384 24576'
-elif [ "$1" == "64" ] ; then
+elif [ "$1" == "64" ]; then
 	size_tmp="16M"
 	size_var="2M"
 	tcp_rmem='8192 87380 1048576'
 	tcp_wmem='8192 87380 1048576'
 	tcp_mem='4096 8192 12288'
-elif [ "$1" == "-l" ] ; then
+elif [ "$1" == "-l" ]; then
 	size_tmp="8M"
 	size_var="1M"
 	tcp_rmem='4096 87380 524288'
@@ -115,7 +115,7 @@ echo 2048 4096 6144 > /proc/sys/net/ipv4/udp_mem
 mtd_storage.sh fill
 
 # prepare ssh authorized_keys
-if [ -f /etc/storage/authorized_keys ] ; then
+if [ -f /etc/storage/authorized_keys ]; then
 	cp -f /etc/storage/authorized_keys /home/root/.ssh
 	chmod 600 /home/root/.ssh/authorized_keys
 fi
@@ -127,6 +127,6 @@ if [ -f /usr/bin/htop ]; then
 fi
 
 # perform start script
-if [ -x /etc/storage/start_script.sh ] ; then
+if [ -x /etc/storage/start_script.sh ]; then
 	/etc/storage/start_script.sh
 fi
