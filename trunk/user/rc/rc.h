@@ -111,26 +111,29 @@
  #define KERNEL_NET_SOMAXCONN		16384
  #define KERNEL_NET_TCP_MAXORPHANS	6144
  #define KERNEL_NET_TCP_FINTIMEOUT	5
- #define KERNEL_MIN_FREE_KBYTES		16384
- #define DNS_RELAY_CACHE_MAX		4096
- #define LOG_ROTATE_SIZE_MAX		2048
+ #define KERNEL_MIN_FREE_KBYTES		2896
+ #define KERNEL_OVERCOMMIT_RATIO	70
+ #define DNS_RELAY_CACHE_MAX		896
+ #define LOG_ROTATE_SIZE_MAX		896
 #elif BOARD_RAM_SIZE > 128
  #define KERNEL_NET_CORE_RMEM		4194304
  #define KERNEL_NET_CORE_WMEM		4194304
  #define KERNEL_NET_SOMAXCONN		8192
  #define KERNEL_NET_TCP_MAXORPHANS	3072
  #define KERNEL_NET_TCP_FINTIMEOUT	4
- #define KERNEL_MIN_FREE_KBYTES		8192
- #define DNS_RELAY_CACHE_MAX		2048
- #define LOG_ROTATE_SIZE_MAX		1024
+ #define KERNEL_MIN_FREE_KBYTES		2048
+ #define KERNEL_OVERCOMMIT_RATIO	60
+ #define DNS_RELAY_CACHE_MAX		768
+ #define LOG_ROTATE_SIZE_MAX		768
 #elif BOARD_RAM_SIZE > 64
  #define KERNEL_NET_CORE_RMEM		2097152
  #define KERNEL_NET_CORE_WMEM		2097152
  #define KERNEL_NET_SOMAXCONN		4096
  #define KERNEL_NET_TCP_MAXORPHANS	1536
  #define KERNEL_NET_TCP_FINTIMEOUT	3
- #define KERNEL_MIN_FREE_KBYTES		4096
- #define DNS_RELAY_CACHE_MAX		1024
+ #define KERNEL_MIN_FREE_KBYTES		1448
+ #define KERNEL_OVERCOMMIT_RATIO	50
+ #define DNS_RELAY_CACHE_MAX		512
  #define LOG_ROTATE_SIZE_MAX		512
 #elif BOARD_RAM_SIZE > 32
  #define KERNEL_NET_CORE_RMEM		1048576
@@ -138,8 +141,9 @@
  #define KERNEL_NET_SOMAXCONN		2048
  #define KERNEL_NET_TCP_MAXORPHANS	768
  #define KERNEL_NET_TCP_FINTIMEOUT	2
- #define KERNEL_MIN_FREE_KBYTES		2048
- #define DNS_RELAY_CACHE_MAX		512
+ #define KERNEL_MIN_FREE_KBYTES		1024
+ #define KERNEL_OVERCOMMIT_RATIO	40
+ #define DNS_RELAY_CACHE_MAX		256
  #define LOG_ROTATE_SIZE_MAX		256
 #else
  #define KERNEL_NET_CORE_RMEM		524288
@@ -147,8 +151,9 @@
  #define KERNEL_NET_SOMAXCONN		1024
  #define KERNEL_NET_TCP_MAXORPHANS	384
  #define KERNEL_NET_TCP_FINTIMEOUT	1
- #define KERNEL_MIN_FREE_KBYTES		1024
- #define DNS_RELAY_CACHE_MAX		256
+ #define KERNEL_MIN_FREE_KBYTES		724
+ #define KERNEL_OVERCOMMIT_RATIO	30
+ #define DNS_RELAY_CACHE_MAX		128
  #define LOG_ROTATE_SIZE_MAX		128
 #endif
 
@@ -547,9 +552,6 @@ void restart_ttyd(void);
 void stop_ss(void);
 void start_ss(void);
 void restart_ss(void);
-void stop_ss_tunnel(void);
-void start_ss_tunnel(void);
-void restart_ss_tunnel(void);
 void update_chnroute(void);
 void update_gfwlist(void);
 #endif
@@ -557,11 +559,6 @@ void update_gfwlist(void);
 void stop_vlmcsd(void);
 void start_vlmcsd(void);
 void restart_vlmcsd(void);
-#endif
-#if defined(APP_DNSFORWARDER)
-void stop_dnsforwarder(void);
-void start_dnsforwarder(void);
-void restart_dnsforwarder(void);
 #endif
 
 /* services_ex.c */

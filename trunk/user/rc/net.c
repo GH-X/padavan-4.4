@@ -723,16 +723,16 @@ set_nf_conntrack(void)
 {
 	int i_nf_val;
 
-#if (BOARD_RAM_SIZE < 32)
-	int i_nf_lim = 4096;
-#elif (BOARD_RAM_SIZE < 64)
-	int i_nf_lim = 16384;
-#elif (BOARD_RAM_SIZE < 128)
-	int i_nf_lim = 65536;
-#elif (BOARD_RAM_SIZE < 256)
-	int i_nf_lim = 262144;
-#else
+#if (BOARD_RAM_SIZE > 256)
 	int i_nf_lim = 327680;
+#elif (BOARD_RAM_SIZE > 128)
+	int i_nf_lim = 262144;
+#elif (BOARD_RAM_SIZE > 64)
+	int i_nf_lim = 65536;
+#elif (BOARD_RAM_SIZE > 32)
+	int i_nf_lim = 16384;
+#else
+	int i_nf_lim = 4096;
 #endif
 
 	i_nf_val = nvram_safe_get_int("nf_max_conn", 16384, 4096, i_nf_lim);
