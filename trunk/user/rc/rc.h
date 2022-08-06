@@ -188,7 +188,6 @@ void stop_auth_kabinet(void);
 /* common_ex.c */
 long uptime(void);
 int rand_seed_by_time(void);
-void set_pagecache_reclaim(void);
 void restart_all_sysctl(void);
 void update_router_mode();
 char *mac_conv(const char *mac_nvkey, int idx, char *buf);

@@ -717,7 +717,6 @@ init_router(void)
 	recreate_passwd_unix(1);
 
 	set_timezone();
-	set_pagecache_reclaim();
 
 	storage_load_time();
 
@@ -1007,7 +1006,6 @@ handle_notifications(void)
 		else if (strcmp(entry->d_name, RCN_RESTART_HDDTUNE) == 0)
 		{
 			system("/sbin/hddtune.sh");
-			set_pagecache_reclaim();
 		}
 #if defined(APP_FTPD)
 		else if (strcmp(entry->d_name, RCN_RESTART_FTPD) == 0)
