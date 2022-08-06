@@ -409,7 +409,6 @@ StorageShare3=仅匿名访问 (只读)
 StorageShare4=账号/匿名访问
 StorageShare5=全部允许 (共享根目录)
 StorageAutoChkDsk=插入磁盘时自动检测文件系统
-StorageCacheReclaim=自动 I/O RAM 缓存回收:
 StorageSpindown=硬盘超时休眠:
 StorageApmOff=禁用硬盘高级电源管理 (APM)
 StorageU3Off=禁用 USB3.0 (仅保留 USB2.0)
