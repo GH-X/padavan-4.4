@@ -240,7 +240,6 @@
 			{"optw_enable", "", NULL, FALSE},
 			{"hdd_spindt", "", NULL, EVM_RESTART_HDDTUNE},
 			{"hdd_apmoff", "", NULL, EVM_RESTART_HDDTUNE},
-			{"pcache_reclaim", "", NULL, EVM_RESTART_HDDTUNE},
 #if defined(APP_NFSD)
 			{"nfsd_enable", "", NULL, EVM_RESTART_NFSD},
 #endif
