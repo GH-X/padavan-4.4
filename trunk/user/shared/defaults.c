@@ -565,7 +565,7 @@ struct nvram_pair router_defaults[] = {
 
 	{ "ss_dns_local_port", "60" },
 	{ "ss_dns_remote_server", "8.8.4.4:53" },
-	{ "dns_forwarder_enable", "0" },
+	{ "dns_forwarder_enable", "1" },
 	{ "ss-tunnel_enable", "0" },
 	{ "ss-tunnel_mtu", "1492" },
 	
