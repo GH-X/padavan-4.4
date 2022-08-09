@@ -893,6 +893,12 @@ struct nvram_pair tables_defaults[] = {
 	{ "ss_server_addr_x", "" },
 	{ "ss_server_port_x", "" },
 	{ "ss_server_key_x", "" },
+	{ "ss_server_sni_x", "" },
+	{ "ss_method_x", "" },
+	{ "ss_protocol_x", "" },
+	{ "ss_proto_param_x", "" },
+	{ "ss_obfs_x", "" },
+	{ "ss_obfs_param_x", "" },
 
 	{ 0, 0 }
 };
