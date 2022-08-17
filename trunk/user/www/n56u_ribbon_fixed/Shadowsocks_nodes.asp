@@ -223,7 +223,7 @@ function showMRULESList(){
                                             <td>
                                                 <input type="text" maxlength="64" class="input" size="64" name="ss_server_sni_x_0" style="width: 333px" placeholder="<#menu5_16_40#>" value="<% nvram_get_x("","ss_server_sni_x_0"); %>">
                                             </td>
-                                            <td width="22%">..SS..Trojan</td>
+                                            <td width="22%">..Trojan</td>
                                         </tr>
 
                                         <tr> <th width="22%"><#menu5_16_41#></th>
@@ -252,7 +252,7 @@ function showMRULESList(){
                                                     <option value="xchacha20-ietf-poly1305" <% nvram_match_x("","ss_method_x_0", "xchacha20-ietf-poly1305","selected"); %>>xchacha20-ietf-poly1305 (ss only)</option>
                                                 </select>
                                             </td>
-                                            <td width="22%">..SS..SSR</td>
+                                            <td width="22%">..SS/SSR</td>
                                         </tr>
 
                                         <tr> <th width="22%"><#menu5_16_42#></th>
@@ -275,7 +275,7 @@ function showMRULESList(){
                                             <td>
                                                 <input type="text" maxlength="64" class="input" size="64" name="ss_proto_param_x_0" style="width: 333px" value="<% nvram_get_x("","ss_proto_param_x_0"); %>">
                                             </td>
-                                            <td width="22%">..SSR</td>
+                                            <td width="22%">..SS/SSR</td>
                                         </tr>
 
                                         <tr> <th width="22%"><#menu5_16_44#></th>
@@ -289,14 +289,14 @@ function showMRULESList(){
                                                     <option value="v2ray_plugin_quic" <% nvram_match_x("","ss_obfs_x_0", "v2ray_plugin_quic","selected"); %>>v2ray_plugin_quic (ss only)</option>
                                                 </select>
                                             </td>
-                                            <td width="22%">..SS..SSR</td>
+                                            <td width="22%">..SS/SSR</td>
                                         </tr>
 
                                         <tr> <th width="22%"><#menu5_16_45#></th>
                                             <td>
                                                 <input type="text" maxlength="64" class="input" size="64" name="ss_obfs_param_x_0" style="width: 333px" value="<% nvram_get_x("","ss_obfs_param_x_0"); %>">
                                             </td>
-                                            <td width="22%">..SS..SSR</td>
+                                            <td width="22%">..SS/SSR</td>
                                         </tr>
 
                                         <tr>
