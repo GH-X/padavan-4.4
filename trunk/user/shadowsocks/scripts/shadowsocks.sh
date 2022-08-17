@@ -108,10 +108,10 @@ if [ ! -e "$CONF_DIR/Nodes-list.md5" ]; then
     server_addr=$(nvram get ss_server_addr_x$j)    # SS SSR Trojan
     server_port=$(nvram get ss_server_port_x$j)    # SS SSR Trojan
     server_key=$(nvram get ss_server_key_x$j)      # SS SSR Trojan
-    server_sni=$(nvram get ss_server_sni_x$j)      # SS     Trojan
+    server_sni=$(nvram get ss_server_sni_x$j)      #        Trojan
     ss_method=$(nvram get ss_method_x$j)           # SS SSR
     ss_protocol=$(nvram get ss_protocol_x$j)       #    SSR
-    ss_proto_param=$(nvram get ss_proto_param_x$j) #    SSR
+    ss_proto_param=$(nvram get ss_proto_param_x$j) # SS SSR
     ss_obfs=$(nvram get ss_obfs_x$j)               # SS SSR
     ss_obfs_param=$(nvram get ss_obfs_param_x$j)   # SS SSR
     echo "$i#$node_type#$server_addr#$server_port#$server_key#$server_sni#$ss_method#$ss_protocol#$ss_proto_param#$ss_obfs#$ss_obfs_param" >> $CONF_DIR/Nodes-list
@@ -119,14 +119,12 @@ if [ ! -e "$CONF_DIR/Nodes-list.md5" ]; then
     [ "$node_type" = "1" ] && server_type="SSR"
     [ "$node_type" = "2" ] && server_type="Trojan"
     if [ "$server_type" = "SS" ]; then
-      if [ "$ss_obfs" = "v2ray_plugin_websocket" ] && [ "$server_sni" == "" ]; then
-        ss_pm="v2rp-HTTP" && ss_plugin="$v2rp_bin" && ss_plugin_opts=""
-      elif [ "$ss_obfs" = "v2ray_plugin_websocket" ] && [ "$server_sni" != "" ]; then
-        ss_pm="v2rp-TLS" && ss_plugin="$v2rp_bin" && ss_plugin_opts="tls;host=$server_sni"
-      elif [ "$ss_obfs" = "v2ray_plugin_quic" ] && [ "$server_sni" != "" ]; then
-        ss_pm="v2rp-QUIC" && ss_plugin="$v2rp_bin" && ss_plugin_opts="mode=quic;host=$server_sni"
+      if [ "$ss_obfs" = "v2ray_plugin_websocket" ]; then
+        ss_pm="v2rp-WEBS" && ss_plugin="$v2rp_bin"
+      elif [ "$ss_obfs" = "v2ray_plugin_quic" ]; then
+        ss_pm="v2rp-QUIC" && ss_plugin="$v2rp_bin"
       else
-        ss_pm="null" && ss_plugin="" && ss_plugin_opts=""
+        ss_pm="null" && ss_plugin=""
       fi
       r_json_file="$i-$server_type-redir.json"
       [ "$ss_pm" != "v2rp-QUIC" ] && t_json_file="$i-$server_type-tunnel.json" || t_json_file="null"
@@ -139,8 +137,8 @@ if [ ! -e "$CONF_DIR/Nodes-list.md5" ]; then
     "password": "$server_key",
     "method": "$ss_method",
     "plugin": "$ss_plugin",
-    "plugin_opts": "$ss_plugin_opts",
-    "plugin_args": "$ss_obfs_param",
+    "plugin_opts": "$ss_obfs_param",
+    "plugin_args": "$ss_proto_param",
     "timeout": $ss_timeout,
     "local_address": "0.0.0.0",
     "local_port": $ss_local_port,
@@ -155,8 +153,8 @@ EOF
     "password": "$server_key",
     "method": "$ss_method",
     "plugin": "$ss_plugin",
-    "plugin_opts": "$ss_plugin_opts",
-    "plugin_args": "$ss_obfs_param",
+    "plugin_opts": "$ss_obfs_param",
+    "plugin_args": "$ss_proto_param",
     "timeout": $ss_timeout,
     "local_address": "0.0.0.0",
     "local_port": $ss_dns_p,
