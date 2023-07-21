@@ -391,9 +391,9 @@ VOID IAPP_L2_UpdatePostCtrl(RTMP_ADAPTER *pAd, UINT8 *mac, INT wdev_idx);
 #ifdef STA_FORCE_ROAM_SUPPORT
 
 
-#define FROAM_SUPP_DEF			FALSE // TRUE by default?
-#define STA_LOW_RSSI			65	// absolute
-#define STA_DETECT_RSSI			55	// absolute
+#define FROAM_SUPP_DEF			TRUE // FALSE by default?
+#define STA_LOW_RSSI			60	// absolute
+#define STA_DETECT_RSSI			65	// absolute
 #define	STALIST_AGEOUT_TIME 	5	// sec
 #define	MNTRLIST_AGEOUT_TIME 	4	// sec
 #define	MNTR_MIN_PKT_COUNT 		5
