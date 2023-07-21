@@ -53,16 +53,17 @@ function initial(){
 	show_banner(3);
 	show_menu(5,11,1);
 	show_footer();
+	change_ss_mode();
 	fill_ss_status(shadowsocks_status());
 	fill_ss_tunnel_status(shadowsocks_tunnel_status());
 	fill_ss_forwarder_status(dnsforwarder_status());
 	$("chnroute_count").innerHTML = '<#menu5_16_4#>&nbsp;&nbsp;' + chnroute_count() ;
 	$("gfwlist_count").innerHTML = '<#menu5_16_4#>&nbsp;&nbsp;' + gfwlist_count() ;
-	switch_ss_type();
 }
 
-function switch_ss_type(){
-	var v = document.form.ss_type.value; //0:ss;1:ssr;2:trojan
+function change_ss_mode(){
+	var v = document.form.ss_mode.value; //0=global 1=chnroute 2=gfwlist
+	showhide_div('row_diversion_rate', (v == 2));
 }
 
 function applyRule(){
@@ -212,20 +213,30 @@ function fill_ss_forwarder_status(status_code){
                                         <tr> <th width="50%"><#menu5_16_7#></th>
                                             <td>
                                                 <select name="ss_type" class="input" style="width: 145px">
-                                                    <option value="0" <% nvram_match_x("","ss_type", "0","selected"); %>>SS</option>
-                                                    <option value="1" <% nvram_match_x("","ss_type", "1","selected"); %>>SSR</option>
-                                                    <option value="2" <% nvram_match_x("","ss_type", "2","selected"); %>>Trojan</option>
-                                                    <option value="9" <% nvram_match_x("","ss_type", "9","selected"); %>><#APChnAuto#></option>
+                                                    <option value="9" <% nvram_match_x("","ss_type", "9", "selected"); %>><#APChnAuto#></option>
+                                                    <option value="2" <% nvram_match_x("","ss_type", "2", "selected"); %>>Trojan</option>
+                                                    <option value="0" <% nvram_match_x("","ss_type", "0", "selected"); %>>SS</option>
+                                                    <option value="1" <% nvram_match_x("","ss_type", "1", "selected"); %>>SSR</option>
+                                                    <option value="3" <% nvram_match_x("","ss_type", "3", "selected"); %>>VMess</option>
                                                 </select>
                                             </td>
                                         </tr>
 
                                         <tr> <th width="50%"><#menu5_16_8#></th>
                                             <td>
-                                                <select name="ss_mode" class="input" style="width: 145px">   
-                                                    <option value="0" <% nvram_match_x("","ss_mode", "0","selected"); %>><#menu5_16_9#></option>
-                                                    <option value="1" <% nvram_match_x("","ss_mode", "1","selected"); %>><#menu5_16_10#></option>
-                                                    <option value="2" <% nvram_match_x("","ss_mode", "2","selected"); %>><#menu5_16_11#></option>
+                                                <select name="ss_mode" class="input" style="width: 145px" onchange="change_ss_mode();">
+                                                    <option value="0" <% nvram_match_x("","ss_mode", "0", "selected"); %>><#menu5_16_9#></option>
+                                                    <option value="1" <% nvram_match_x("","ss_mode", "1", "selected"); %>><#menu5_16_10#></option>
+                                                    <option value="2" <% nvram_match_x("","ss_mode", "2", "selected"); %>><#menu5_16_11#></option>
+                                                </select>
+                                            </td>
+                                        </tr>
+
+                                        <tr id="row_diversion_rate" style="display:none;"> <th width="50%" style="border-top: 0 none;"><#menu5_16_110#></th>
+                                            <td style="border-top: 0 none;">
+                                                <select name="diversion_rate" class="input" style="width: 145px">
+                                                    <option value="2" <% nvram_match_x("","diversion_rate", "2", "selected"); %>><#menu5_16_112#></option>
+                                                    <option value="1" <% nvram_match_x("","diversion_rate", "1", "selected"); %>><#menu5_16_111#></option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -421,3 +432,4 @@ function fill_ss_forwarder_status(status_code){
 
 </body>
 </html>
+
