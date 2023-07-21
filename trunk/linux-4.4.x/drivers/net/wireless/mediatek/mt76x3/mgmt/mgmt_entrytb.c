@@ -883,8 +883,8 @@ BOOLEAN MacTableDeleteEntry(RTMP_ADAPTER *pAd, USHORT wcid, UCHAR *pAddr)
 */
 		#endif /* WSC_INCLUDED */
 #endif /* MT_MAC */
-#ifdef STA_FORCE_ROAM_SUPPORT
 
+#ifdef STA_FORCE_ROAM_SUPPORT
 		if(((PRTMP_ADAPTER)(pEntry->wdev->sys_handle))->en_force_roam_supp && IS_ENTRY_CLIENT(pEntry)
 #ifdef WH_EZ_SETUP
 			&& (IS_EZ_SETUP_ENABLED(pEntry->wdev) && !pEntry->easy_setup_enabled)
@@ -892,7 +892,7 @@ BOOLEAN MacTableDeleteEntry(RTMP_ADAPTER *pAd, USHORT wcid, UCHAR *pAddr)
 		){
 			if(pEntry->low_rssi_notified){
 				DBGPRINT(RT_DEBUG_OFF, 
-					("MacTableDeleteEntry: Notify to ForceRoam App \n"));
+					("[Force Roam] notify disconnect STA\n"));
 				froam_notify_sta_disconnect(pAd, pEntry);
 			}
 		}
