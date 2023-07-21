@@ -27,6 +27,7 @@ SOFTETHERVPN_ENABLE=n
 SHADOWSOCKS_ENABLE=n
 FRP_ENABLE=n
 TROJAN_ENABLE=n
+IAPPD_ENABLE=n
 
 ifneq ($(CONFIG_FIRMWARE_INCLUDE_OPENSSH),y)
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_DROPBEAR),y)
@@ -90,6 +91,10 @@ ifneq ($(filter y,$(CONFIG_FIRMWARE_INCLUDE_WING) $(CONFIG_FIRMWARE_INCLUDE_TROJ
 TROJAN_ENABLE=y
 endif
 
+ifndef CONFIG_FIRST_IF_NONE
+IAPPD_ENABLE=y
+endif
+
 dir_y =
 dir_n =
 dir_  =
@@ -122,6 +127,7 @@ dir_y						+= udpxy
 dir_y						+= utils
 dir_y						+= lanauth
 dir_y						+= 802.1x
+dir_$(IAPPD_ENABLE)						+= ralinkiappd
 dir_y						+= wpa_supplicant
 dir_y						+= pppd
 dir_y						+= pppoe
