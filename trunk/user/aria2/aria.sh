@@ -6,7 +6,11 @@
 SVC_ROOT=0
 
 # process priority (0-normal, 19-lowest)
-SVC_PRIORITY=3
+SVC_PRIORITY=9
+
+# save error/unfinished downloads to FILE_LIST every SAVE_SEC seconds
+# (0) file will be saved only when aria2 exits
+SAVE_SEC=1800
 #######################################################################
 
 SVC_NAME="Aria2"
@@ -133,9 +137,9 @@ EOF
 		svc_user=" -c nobody"
 	fi
 
-	start-stop-daemon -S -N $SVC_PRIORITY$svc_user -x $SVC_PATH -- \
-		-D --enable-rpc=true --conf-path="$FILE_CONF" --input-file="$FILE_LIST" --save-session="$FILE_LIST" \
-		--rpc-listen-port="$aria_rport" --listen-port="$aria_pport" --dht-listen-port="$aria_pport" $SSL_OPT
+	start-stop-daemon -S -b -N $SVC_PRIORITY$svc_user -x $SVC_PATH -- \
+		-D --conf-path="$FILE_CONF" --input-file="$FILE_LIST" --save-session="$FILE_LIST" --save-session-interval="$SAVE_SEC" \
+		--enable-rpc=true --rpc-listen-port="$aria_rport" --listen-port="$aria_pport" --dht-listen-port="$aria_pport" $SSL_OPT
 
 	if [ $? -eq 0 ] ; then
 		echo "[  OK  ]"
