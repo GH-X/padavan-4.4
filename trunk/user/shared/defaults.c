@@ -548,8 +548,9 @@ struct nvram_pair router_defaults[] = {
 #if defined(APP_SHADOWSOCKS)
 	/* shadowsocks */
 	{ "ss_enable", "0" },
-	{ "ss_type", "9" }, //0=ss 1=ssr 2=trojan 9=auto
+	{ "ss_type", "9" }, 	//0=ss 1=ssr 2=trojan 3=vmess 9=auto
 	{ "ss_mode", "1" }, 	//0=global 1=chnroute 2=gfwlist
+	{ "diversion_rate", "2" },
 	{ "ss_udp", "0" },
 	{ "ss_local_port", "1080" },
 	{ "ss_mtu", "1492" },
