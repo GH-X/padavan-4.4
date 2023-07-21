@@ -664,6 +664,7 @@ init_crontab(void)
 #if defined (APP_SHADOWSOCKS)
 	ret |= system("/sbin/check_crontab.sh 0 8 a/10 a a update_chnroute.sh");
 	ret |= system("/sbin/check_crontab.sh 0 7 a/10 a a update_gfwlist.sh");
+	ret |= system("/sbin/check_crontab.sh a/1 a a a a ss-watchcat.sh");
 #endif
 	return ret;
 }
@@ -1444,12 +1445,7 @@ main(int argc, char **argv)
 #if defined (USE_STORAGE)
 		safe_remove_all_stor_devices(1);
 #endif
-#ifdef MTD_FLASH_32M_REBOOT_BUG
-		system("/bin/mtd_write -r unlock Config");
-		return 0;
-#else
 		return sys_exit();
-#endif
 	}
 
 	if (!strcmp(base, "shutdown") || !strcmp(base, "halt")) {

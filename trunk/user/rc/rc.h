@@ -559,6 +559,11 @@ void stop_vlmcsd(void);
 void start_vlmcsd(void);
 void restart_vlmcsd(void);
 #endif
+#if BOARD_HAS_2G_RADIO
+void stop_iappd(void);
+void start_iappd(void);
+void restart_iappd(void);
+#endif
 
 /* services_ex.c */
 int fill_dnsmasq_servers(void);
@@ -703,9 +708,12 @@ int  start_watchdog(void);
 void notify_watchdog_time(void);
 void notify_watchdog_wifi(int is_5ghz);
 
+/* gpio_btn.c */
 int  btn_main(int argc, char *argv[]);
 int  start_gpio_btn(void);
 int  get_state_led_pwr(void);
+
+/* btn_action.c */
 void btn_reset_action(void);
 void btn_event_long(int btn_id);
 void btn_event_short(int btn_id);
