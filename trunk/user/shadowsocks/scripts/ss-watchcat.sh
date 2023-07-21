@@ -2,10 +2,15 @@
 
 CONF_DIR="/tmp/SSP"
 statusfile="$CONF_DIR/statusfile"
+scoresfile="$CONF_DIR/scoresfile"
 areconnect="$CONF_DIR/areconnect"
 netdpcount="$CONF_DIR/netdpcount"
 errorcount="$CONF_DIR/errorcount"
+scorecount="$CONF_DIR/scorecount"
+dnscqstart="$CONF_DIR/dnscqstart"
 quickstart="$CONF_DIR/quickstart"
+startrules="$CONF_DIR/startrules"
+timeslimit="$CONF_DIR/timeslimit"
 ssp_log_file="/tmp/ss-watchcat.log"
 redir_log_file="/tmp/ss-redir.log"
 max_log_bytes="100000"
@@ -19,16 +24,6 @@ autorec=$(nvram get ss_watchcat_autorec)
 extbpid=$(expr 100000 + $$)
 logmark=${extbpid:1}
 
-infor(){
-	issjfinfor=$(tail -n 1 $CONF_DIR/issjfinfor)
-	[ -n "$issjfinfor" ] && echo "$issjfinfor" || echo "???──???:???──[???]"
-}
-
-loger(){
-	sed -i '/'$(date "+%Y-%m-%d_%H:%M:%S")'_'$logmark''$1'/d' $ssp_log_file
-	sed -i '1i\'$(date "+%Y-%m-%d_%H:%M:%S")'_'$logmark''$1'' $ssp_log_file
-}
-
 count(){
 	counts_file="$1"
 	[ -e "$counts_file" ] || echo "0" > "$counts_file"
@@ -38,25 +33,48 @@ count(){
 		echo "$3" > "$counts_file"
 	elif [ "$2" = "++" ]; then
 		form_counts=$(expr $counts_form + $3)
-		echo "$form_counts" > "$counts_file"
+		[ $form_counts -ge $4 ] && echo "$4" > "$counts_file" || echo "$form_counts" > "$counts_file"
 	elif [ "$2" = "--" ]; then
 		form_counts=$(expr $counts_form - $3)
-		[ $form_counts -le 0 ] && echo "0" > "$counts_file" || echo "$form_counts" > "$counts_file"
+		[ $form_counts -le $4 ] && echo "$4" > "$counts_file" || echo "$form_counts" > "$counts_file"
 	else
 		echo "$counts_form"
 	fi
 }
 
+infor(){
+	inforsnum=$(tail -n 1 $CONF_DIR/issjfinfor | awk -F# '{print $1}')
+	infortype=$(tail -n 1 $CONF_DIR/issjfinfor | awk -F# '{print $2}')
+	inforaddr=$(tail -n 1 $CONF_DIR/issjfinfor | awk -F# '{print $3}')
+	inforport=$(tail -n 1 $CONF_DIR/issjfinfor | awk -F# '{print $4}')
+	if [ "$1" = "0" ]; then
+		[ -n "$inforsnum" ] && echo "$inforsnum@" || echo "null"
+	elif [ "$1" = "1" ]; then
+		[ -n "$inforsnum$infortype$inforaddr$inforport" ] && \
+		echo "$inforsnum@$infortype@$inforaddr:$inforport" || echo "???@???@???:???"
+	else
+		[ -n "$inforsnum$infortype$inforaddr$inforport" ] && \
+		echo "$inforsnum──$(count $scorecount)──$infortype──$inforaddr:$inforport" || \
+		echo "???──???──???──???:???"
+	fi
+}
+
+loger(){
+	sed -i '1i\'$(date "+%Y-%m-%d_%H:%M:%S")'_'$logmark''$1'' $ssp_log_file
+}
+
 godet(){
 	rm -rf $statusfile
-	if !(iptables-save | grep -q "SSP_RULES") || !(ipset list -n | grep -q 'private') || \
+	if !(ipset list -n | grep -q 'servers') || !(ipset list -n | grep -q 'private') || \
 	!(ipset list -n | grep -q 'gfwlist') || !(ipset list -n | grep -q 'chnlist'); then
-		count $errorcount ++ 1 && count $areconnect +- 0
+		count $errorcount ++ 1 5 && count $areconnect +- 0 && count $startrules +- 1
 	fi
 	for sspredirPID in $(pidof ss-redir); do
 		sspredirRSS=$(cat /proc/$sspredirPID/status | grep 'VmRSS' | \
 		sed 's/[[:space:]]//g' | sed 's/kB//g' | awk -F: '{print $2}')
-		[ $sspredirRSS -ge $redirmaxRAM ] && count $errorcount +- 5 && count $areconnect +- 0
+		if [ $sspredirRSS -ge $redirmaxRAM ]; then
+			count $errorcount +- 5 && count $areconnect +- 0 && count $startrules +- 1
+		fi
 	done
 	return 0
 }
@@ -68,9 +86,20 @@ goout(){
 }
 
 dndet(){
-	$(pidof dnsmasq &>/dev/null) || $(sleep 1 && pidof dnsmasq &>/dev/null) || \
+	if $(tail -n +1 $dnscqstart | grep -q 'dns-forwarder'); then
+		$(pidof dns-forwarder &>/dev/null) || $(pidof dns-forwarder &>/dev/null) || \
+		$(pidof dns-forwarder &>/dev/null) || $(pidof dns-forwarder &>/dev/null) || \
+		$($dnscqstart && loger "├──转发进程中止!!!启动进程")
+	elif $(tail -n +1 $dnscqstart | grep -q 'ss-local'); then
+		$(pidof ss-local &>/dev/null) || $(pidof ss-local &>/dev/null) || \
+		$(pidof ss-local &>/dev/null) || $(pidof ss-local &>/dev/null) || \
+		$($dnscqstart && loger "├──隧道进程中止!!!启动进程")
+	fi
+	$(pidof dnsmasq &>/dev/null) || $(pidof dnsmasq &>/dev/null) || \
+	$(pidof dnsmasq &>/dev/null) || $(pidof dnsmasq &>/dev/null) || \
 	$(restart_dhcpd && loger "├──解析进程中止!!!启动进程")
-	$(pidof ss-redir &>/dev/null) || $(sleep 1 && pidof ss-redir &>/dev/null) || \
+	$(pidof ss-redir &>/dev/null) || $(pidof ss-redir &>/dev/null) || \
+	$(pidof ss-redir &>/dev/null) || $(pidof ss-redir &>/dev/null) || \
 	$($quickstart && loger "├──代理进程中止!!!启动进程")
 	!(cat "$statusfile" 2>/dev/null | grep -q 'daten_stopwatchcat') || return 1
 }
@@ -93,6 +122,41 @@ scout(){
 	--speed-limit 1 -A "$user_agent" | grep -q -s -i "$keywords" || return 1
 }
 
+score(){
+	sed -i '/^'$(infor 0)'/d' $scoresfile
+	echo "$(infor 1)#$(count $scorecount)" >> $scoresfile
+	sort -u -n -r $scoresfile > $CONF_DIR/scoresfile.tmp && mv -f $CONF_DIR/scoresfile.tmp $scoresfile
+	servernum="0"
+	available="0"
+	while read line
+	do
+		nodeinfor=$(echo "$line" | awk -F# '{print $1}')
+		nodeisnum=$(echo "$nodeinfor" | awk -F@ '{print $1}')
+		nodeitype=$(echo "$nodeinfor" | awk -F@ '{print $2}')
+		nodeiarpt=$(echo "$nodeinfor" | awk -F@ '{print $3}')
+		nodeiaddr=$(echo "$nodeiarpt" | awk -F: '{print $1}')
+		nodeiport=$(echo "$nodeiarpt" | awk -F: '{print $2}')
+		nodescore=$(echo "$line" | awk -F# '{print $2}')
+		loger "├──节点端口:$nodeiport"
+		loger "├──节点地址:$nodeiaddr"
+		loger "├──节点类型:$nodeitype"
+		loger "├──连接时长:$nodescore"
+		[ $nodeinfor = $(infor 1) ] && loger "┣━━当前节点:$nodeisnum" || \
+		loger "┣━━历史节点:$nodeisnum"
+		[ $nodescore -ge 30 ] && available=$((available+1))
+		servernum=$((servernum+1))
+	done < $scoresfile
+	tlimit=$(count $timeslimit) && tlanti=$(expr 10 - $tlimit) && tptime=$(expr $tlanti \* 10)
+	if [ "$1" = "1" ] && [ $(count $scorecount) -ge $tptime ]; then
+		count $timeslimit -- 1 2
+	elif [ "$1" = "1" ] && [ $(expr $available \* 100) -gt $(expr $servernum \* 70) ]; then
+		count $timeslimit -- 1 2
+	elif [ "$1" = "0" ] && [ $(expr $available \* 100) -lt $(expr $servernum \* 30) ]; then
+		count $timeslimit ++ 1 8
+	fi
+	return 0
+}
+
 watchcat_stop_ssp(){
 	!(cat "$statusfile" 2>/dev/null | grep -q 'watchcat_stop_ssp') || return 0
 	[ $(count $errorcount) -ge 1 ] || return 0
@@ -102,67 +166,51 @@ watchcat_stop_ssp(){
 
 watchcat_start_ssp(){
 	$(cat "$statusfile" 2>/dev/null | grep -q 'watchcat_stop_ssp') || return 0
-	count $errorcount -- 1 && [ $(count $errorcount) -le 0 ] || return 1
-	scout "$chn_domain" 4 0 || scout "$chn_domain" 4 1 || return 1
+	count $errorcount -- 1 0 && [ $(count $errorcount) -le 0 ] || return 1
+	scout "$chn_domain" "$(count $timeslimit)" 0 || \
+	scout "$chn_domain" "$(count $timeslimit)" 1 || return 1
 	[ "$(nvram get ss_enable)" = "1" ] || /usr/bin/shadowsocks.sh stop &>/dev/null
 	!(pidof ss-redir &>/dev/null) || /usr/bin/shadowsocks.sh stop &>/dev/null
-	STA_LOG="恢复正常!!!重新启动代理" && loger "├──$STA_LOG" && logger -st "SSP[$$]watchcat" "$STA_LOG"
+	STA_LOG="恢复正常!!!重新启动代理" && loger "├──$STA_LOG" && logger -st "SSP[$$]WARNING" "$STA_LOG"
 	count $netdpcount +- 0 && count $errorcount +- 0 && echo "watchcat_start_ssp" > $statusfile
 	/usr/bin/shadowsocks.sh start &>/dev/null || return 1
 }
 
-amsgetnotset(){
-	if $(tail -n +1 /tmp/syslog.log | grep -q 'ipnotset'); then
-		tail -n +1 /tmp/syslog.log | grep 'ipnotset' >> $CONF_DIR/amsnotset.tmp || return 1
-		cat $CONF_DIR/amsnotset.tmp | sed 's/ DST=/-/g' | sed 's/ LEN=/-/g' | \
-		awk -F- '{print $2}' >> $CONF_DIR/amsallexp.tmp && rm -rf $CONF_DIR/amsnotset.tmp || return 1
-		for addr in $(cat $CONF_DIR/amsallexp.tmp); do
-			if [ $(grep -o "$addr" $CONF_DIR/amsallexp.tmp | wc -l) -ge 2 ]; then
-				$(ipset list chnlist | grep -q "$addr") && ipset del chnlist $addr &>/dev/null
-				$(ipset list gfwlist | grep -v -q "$addr") && ipset add gfwlist $addr &>/dev/null
-				sed -i '/'$addr'/d' $CONF_DIR/CHNwhiteip.conf
-				sed -i '/'$addr'/d' $CONF_DIR/GFWblackip.conf
-				echo $addr >> $CONF_DIR/GFWblackip.conf
-				sed -i '/'$addr'/d' $CONF_DIR/amsallexp.tmp
-				sed -i '/'$addr'/d' $CONF_DIR/amsallexp.set
-				sed -i '/'$addr'/d' $CONF_DIR/amsallexp.txt
-				sed -i '/ DST='$addr'/d' /tmp/syslog.log
-			fi
-		done
-	fi
-	[ $(cat $CONF_DIR/amsallexp.txt 2>/dev/null | wc -l) -ge 1 ] && \
-	cat $CONF_DIR/amsallexp.txt >> $CONF_DIR/amsallexp.tmp
-	rm -rf $CONF_DIR/amsallexp.txt
-	[ $(cat $CONF_DIR/amsallexp.tmp 2>/dev/null | wc -l) -ge 1 ] && \
-	mv -f $CONF_DIR/amsallexp.tmp $CONF_DIR/amsallexp.txt
-	rm -rf $CONF_DIR/amsallexp.tmp
-	return 0
-}
-
 reconnection(){
-	[ "$recyesornot" = "1" ] && [ $(daten -l 60) -ge 25 ] || return 0
+	[ "$(count $timeslimit)" = "0" ] && count $timeslimit +- 5
+	timel=$(count $timeslimit) && timen=$(expr $timel \* 6 + 7)
+	[ "$recyesornot" = "1" ] && [ $(daten -l 60) -ge $timen ] || return 0
 	[ "$(daten -m)" = "0" ] || \
 	$([ "$autorec" = "1" ] && [ "$(daten -m)" = "5" ]) || \
 	$([ "$autorec" = "1" ] && [ $(count $netdpcount) -ge 1 ]) || return 0
 	dndet || return 1
 	recyesornot="0"
-	scout "$gfw_domain" 4 0 || scout "$gfw_domain" 4 1
+	scout "$gfw_domain" "$(count $timeslimit)" 0 || scout "$gfw_domain" "$(count $timeslimit)" 1
 	if [ "$?" = "0" ]; then
-		loger "├──连接正常" && count $netdpcount +- 0 || return 1
+		count $netdpcount +- 0 && count $scorecount ++ 5 10080 && score 1
 	elif [ "$?" = "1" ]; then
-		scout "$chn_domain" 4 0 || scout "$chn_domain" 4 1
+		scout "$chn_domain" "$(count $timeslimit)" 0 || scout "$chn_domain" "$(count $timeslimit)" 1
 		if [ "$?" = "0" ]; then
 			if [ "$autorec" = "1" ]; then
-				count $netdpcount ++ 1
-				[ $(count $netdpcount) -ge 3 ] && count $errorcount ++ 1
-				watchcat_stop_ssp || return 1
+				count $netdpcount ++ 1 9
+				if [ $(count $netdpcount) -ge 3 ]; then
+					count $errorcount ++ 1 5 && recyesornot="1"
+					score 0 && count $scorecount +- 0
+					watchcat_stop_ssp || watchcat_start_ssp || return 1
+				else
+					score 0
+				fi
 			else
-				count $netdpcount ++ 1
-				[ $(count $netdpcount) -ge 9 ] && count $errorcount ++ 1 && count $areconnect +- 0
-				watchcat_stop_ssp || return 1
+				count $netdpcount ++ 1 9
+				if [ $(count $netdpcount) -ge 9 ]; then
+					count $errorcount ++ 1 5 && count $areconnect +- 0
+					watchcat_stop_ssp || return 1
+				else
+					return 0
+				fi
 			fi
 		elif [ "$?" = "1" ]; then
-			count $errorcount ++ 1 && count $areconnect +- 0
+			count $errorcount ++ 1 5 && count $areconnect +- 0
 			watchcat_stop_ssp || return 1
 		else
 			return 1
@@ -175,33 +223,8 @@ reconnection(){
 automaticset(){
 	!(cat "$statusfile" 2>/dev/null | grep -q 'daten_stopwatchcat') && \
 	echo "watchcat_automaticset" > $statusfile && inams=0 || inams=50
-	bouts=$(daten -l 50) && dndet || inams=50
-	recyesornot="1"
+	recyesornot="1" && bouts=$(daten -l 50) && dndet || inams=50
 	while [ $inams -lt $bouts ]; do
-		amsgetnotset || inams=50
-		[ $(cat $CONF_DIR/amsallexp.txt 2>/dev/null | wc -l) -ge 1 ] && \
-		for ip in $(cat $CONF_DIR/amsallexp.txt 2>/dev/null); do
-			$(ping -c 1 -s 36 -W 1 -w 1 -q $ip | grep -q '1 packets received')
-			if [ "$?" = "0" ]; then
-				$(ipset list gfwlist | grep -q "$ip") && ipset del gfwlist $ip &>/dev/null
-				$(ipset list chnlist | grep -v -q "$ip") && ipset add chnlist $ip &>/dev/null
-				sed -i '/'$ip'/d' $CONF_DIR/GFWblackip.conf
-				sed -i '/'$ip'/d' $CONF_DIR/CHNwhiteip.conf
-				echo $ip >> $CONF_DIR/CHNwhiteip.conf
-				sed -i '/'$ip'/d' $CONF_DIR/amsallexp.set
-				echo $ip >> $CONF_DIR/amsallexp.set
-			else
-				$(ipset list chnlist | grep -q "$ip") && ipset del chnlist $ip &>/dev/null
-				$(ipset list gfwlist | grep -v -q "$ip") && ipset add gfwlist $ip &>/dev/null
-				sed -i '/'$ip'/d' $CONF_DIR/CHNwhiteip.conf
-				sed -i '/'$ip'/d' $CONF_DIR/GFWblackip.conf
-				echo $ip >> $CONF_DIR/GFWblackip.conf
-				sed -i '/'$ip'/d' $CONF_DIR/amsallexp.set
-			fi
-			sed -i '/'$ip'/d' $CONF_DIR/amsallexp.txt
-			sed -i '/ DST='$ip'/d' /tmp/syslog.log
-			bouts=$(daten -l 50) && dndet || break
-		done
 		sleep 1 && reconnection || inams=50
 		bouts=$(daten -l 50) && dndet || inams=50
 	done
@@ -210,14 +233,16 @@ automaticset(){
 check_cat_file(){
 	$(cat "$CRON_CONF" 2>/dev/null | grep -q "ss-watchcat.sh") && cronboot="1" || cronboot="0"
 	[ "$cronboot" = "1" ] || rm -rf $ssp_log_file
-	$([ -e $ssp_log_file ] && [ -n $(tail -n 1 $ssp_log_file) ] && loger "└──$(infor)") || \
+	$([ -n "$(tail -n 1 $ssp_log_file)" ] && loger "└──$(infor)") || \
 	echo "$(date "+%Y-%m-%d_%H:%M:%S")_$logmark└──$(infor)" > $ssp_log_file
-	[ $(stat -c %s $ssp_log_file) -lt $max_log_bytes ] || \
-	sed -i '/'$(tail -n 1 $ssp_log_file | awk -F: '{print $1}')'/d' $ssp_log_file
-	touch $redir_log_file && [ $(stat -c %s $redir_log_file) -lt $max_log_bytes ] || \
-	echo "$(date "+%Y-%m-%d_%H:%M:%S")_$logmark───日志文件过大!清空日志文件" > $redir_log_file
-	[ "$cronboot" = "1" ] || return 1
-	return 0
+	while [ $(stat -c %s $ssp_log_file) -gt $max_log_bytes ]; do
+		sed -i '/'$(tail -n 1 $ssp_log_file | awk -F: '{print $1":"$2}')'/d' $ssp_log_file
+	done
+	touch $redir_log_file
+	while [ $(stat -c %s $redir_log_file) -gt $max_log_bytes ]; do
+		sed -i '9d' $redir_log_file
+	done
+	[ "$cronboot" = "1" ] && return 0 || return 1
 }
 
 check_cat_sole(){
