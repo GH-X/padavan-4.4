@@ -2005,14 +2005,17 @@ static int shadowsocks_action_hook(int eid, webs_t wp, int argc, char **argv)
 
 	if (!strcmp(ss_action, "subRestart")) {
 		doSystem("echo %s > %s", "0", "/tmp/SSP/areconnect");
+		doSystem("echo %s > %s", "1", "/tmp/SSP/startrules");
 		needed_seconds = 9;
 	} else if (!strcmp(ss_action, "Reconnect")) {
 		notify_rc(RCN_RESTART_SHADOWSOCKS);
 		doSystem("echo %s > %s", "1", "/tmp/SSP/areconnect");
+		doSystem("echo %s > %s", "0", "/tmp/SSP/startrules");
 		needed_seconds = 9;
 	} else if (!strcmp(ss_action, "Update_chnroute")) {
 		notify_rc(RCN_RESTART_CHNROUTE_UPD);
 		doSystem("echo %s > %s", "0", "/tmp/SSP/areconnect");
+		doSystem("echo %s > %s", "1", "/tmp/SSP/startrules");
 		needed_seconds = 1;
 	} else if (!strcmp(ss_action, "Update_gfwlist")) {
 		notify_rc(RCN_RESTART_GFWLIST_UPD);
@@ -2434,6 +2437,12 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int has_2g_11ax = 0;
 #endif
+#if defined (STA_FORCE_ROAM)
+	int has_2g_stafr = 1;
+#else
+	int has_2g_stafr = 0;
+#endif
+
 
 	websWrite(wp,
 		"function found_utl_hdparm() { return %d;}\n"
@@ -2515,7 +2524,8 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function support_lan_ap_isolate() { return %d;}\n"
 		"function support_5g_160mhz() { return %d;}\n"
 		"function support_5g_11ax() { return %d;}\n"
-		"function support_2g_11ax() { return %d;}\n",
+		"function support_2g_11ax() { return %d;}\n"
+		"function support_2g_stafr() { return %d;}\n",
 		has_ipv6,
 		has_ipv6_ppe,
 		has_ipv4_ppe,
@@ -2552,7 +2562,8 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		has_lan_ap_isolate,
 		has_5g_160mhz,
 		has_5g_11ax,
-		has_2g_11ax
+		has_2g_11ax,
+		has_2g_stafr
 	);
 
 	return 0;

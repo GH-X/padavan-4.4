@@ -835,6 +835,7 @@
 			{"ss_enable","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"ss_type","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"ss_mode","",NULL, EVM_RESTART_SHADOWSOCKS},
+			{"diversion_rate","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"ss_udp","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"ss_local_port","",NULL, EVM_RESTART_SHADOWSOCKS},
 			{"ss_mtu","",NULL, EVM_RESTART_SHADOWSOCKS},
