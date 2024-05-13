@@ -30,8 +30,8 @@ $j(document).ready(function(){
 });
 
 function initial(){
-	show_banner(2);
-	show_menu(5,13,2);
+	show_banner(3);
+	show_menu(5,11,3);
 	show_footer();
 }
 </script>
@@ -80,19 +80,24 @@ function initial(){
                 <div class="row-fluid">
                     <div class="span12">
                         <div class="box well grad_colour_dark_blue">
-                            <h2 class="box_head round_top"><#menu5_16#></h2>
+                            <h2 class="box_head round_top"><#menu5_16#> - <#menu5_16_0#></h2>
                             <div class="round_bottom">
                                 <div class="row-fluid">
                                     <div id="tabMenu" class="submenuBlock"></div>
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <td colspan="3" style="border-top: 0 none; padding-bottom: 0px;">
-                                            <textarea rows="21" class="span12" style="height:377px; font-family:'Courier New', Courier, mono; font-size:13px;" readonly="readonly" wrap="off" id="textarea"><% nvram_dump("ss-watchcat.log",""); %></textarea>
+                                            <textarea rows="8" class="span12" style="resize:none; font-family:'Courier New', Courier, mono; font-size:13px;" readonly="readonly" wrap="off" id="textarea"><% nvram_dump("ss-redir.log",""); %></textarea>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td width="15%" style="text-align: left; padding-bottom: 0px;">
-                                            <input type="button" onClick="location.href=location.href" value="<#CTL_refresh#>" class="btn btn-primary" style="width: 219px">
+                                            <td colspan="3" style="border-top: 0 none; padding-bottom: 0px;">
+                                            <textarea rows="8" class="span12" style="resize:none; font-family:'Courier New', Courier, mono; font-size:13px;" readonly="readonly" wrap="off" id="textarea"><% nvram_dump("ss-watchcat.log",""); %></textarea>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="3" style="text-align: right; padding-bottom: 0px;">
+                                            <input type="button" onClick="location.href=location.href" value="<#CTL_refresh#>" class="btn btn-primary" style="width: 217px">
                                             </td>
                                         </tr>
                                     </table>
@@ -108,3 +113,4 @@ function initial(){
 </div>
 </body>
 </html>
+

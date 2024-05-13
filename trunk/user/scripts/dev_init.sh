@@ -4,13 +4,38 @@ mount -t proc proc /proc
 mount -t sysfs sysfs /sys
 [ -d /proc/bus/usb ] && mount -t usbfs usbfs /proc/bus/usb
 
-size_tmp="24M"
-size_var="4M"
 size_etc="6M"
 
-if [ "$1" == "-l" ] ; then
+if [ "$1" == "512" ]; then
+	size_tmp="40M"
+	size_var="5M"
+	tcp_rmem='20480 87380 8388608'
+	tcp_wmem='20480 87380 8388608'
+	tcp_mem='32768 65536 98304'
+elif [ "$1" == "256" ]; then
+	size_tmp="32M"
+	size_var="4M"
+	tcp_rmem='16384 87380 4194304'
+	tcp_wmem='16384 87380 4194304'
+	tcp_mem='16384 32768 49152'
+elif [ "$1" == "128" ]; then
+	size_tmp="24M"
+	size_var="3M"
+	tcp_rmem='12288 87380 2097152'
+	tcp_wmem='12288 87380 2097152'
+	tcp_mem='8192 16384 24576'
+elif [ "$1" == "64" ]; then
+	size_tmp="16M"
+	size_var="2M"
+	tcp_rmem='8192 87380 1048576'
+	tcp_wmem='8192 87380 1048576'
+	tcp_mem='4096 8192 12288'
+elif [ "$1" == "-l" ]; then
 	size_tmp="8M"
 	size_var="1M"
+	tcp_rmem='4096 87380 524288'
+	tcp_wmem='4096 87380 524288'
+	tcp_mem='2048 4096 6144'
 fi
 
 mount -t tmpfs tmpfs /dev   -o size=8K
@@ -77,14 +102,20 @@ ln -sf /etc_ro/e2fsck.conf /etc/e2fsck.conf
 ln -sf /etc_ro/ipkg.conf /etc/ipkg.conf
 
 # tune linux kernel
-echo 65536        > /proc/sys/fs/file-max
-echo "1024 65535" > /proc/sys/net/ipv4/ip_local_port_range
+echo 65536 > /proc/sys/fs/file-max
+echo 1024 65535 > /proc/sys/net/ipv4/ip_local_port_range
+echo "$tcp_rmem" > /proc/sys/net/ipv4/tcp_rmem
+echo "$tcp_wmem" > /proc/sys/net/ipv4/tcp_wmem
+echo "$tcp_mem" > /proc/sys/net/ipv4/tcp_mem
+echo 65535 > /proc/sys/net/ipv4/udp_rmem_min
+echo 65535 > /proc/sys/net/ipv4/udp_wmem_min
+echo 2048 4096 6144 > /proc/sys/net/ipv4/udp_mem
 
 # fill storage
 mtd_storage.sh fill
 
 # prepare ssh authorized_keys
-if [ -f /etc/storage/authorized_keys ] ; then
+if [ -f /etc/storage/authorized_keys ]; then
 	cp -f /etc/storage/authorized_keys /home/root/.ssh
 	chmod 600 /home/root/.ssh/authorized_keys
 fi
@@ -96,7 +127,6 @@ if [ -f /usr/bin/htop ]; then
 fi
 
 # perform start script
-if [ -x /etc/storage/start_script.sh ] ; then
+if [ -x /etc/storage/start_script.sh ]; then
 	/etc/storage/start_script.sh
 fi
-

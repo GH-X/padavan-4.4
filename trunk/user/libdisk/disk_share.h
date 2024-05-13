@@ -26,8 +26,9 @@
 #define MOUNT_LAYER		(BASE_LAYER+1)
 #define SHARE_LAYER		(MOUNT_LAYER+1)
 
-#define FTP_ANONYMOUS_USER	"anonymous"
-#define SMB_GUEST_USER		FTP_ANONYMOUS_USER
+#define FTP_ANONYMOUS_USER	ANONYMOUS_GUEST
+#define SMB_GUEST_USER			ANONYMOUS_GUEST
+#define ANONYMOUS_GUEST 		"Guest"
 
 extern int get_account_list(int *, char ***);
 extern int get_folder_list_in_mount_path(const char *const, int *, char ***);

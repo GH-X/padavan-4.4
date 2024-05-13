@@ -26,7 +26,7 @@
 #define BTN_RELEASED	2
 
 #define RECV_PERIOD_US		100 * 1000	/* 100ms */
-#define CANCEL_COUNT		8			/* 800ms */
+#define SHORT_COUNT		10			/* 1s */
 #define LONG_COUNT		30			/* 3s */
 #define RESET_COUNT		50			/* 5s */
 
@@ -50,21 +50,6 @@ static struct btn_entrys_t
 	{ BTN_FN2, "fn2", 0 },
 	{ 0, NULL, 0 },
 };
-
-int get_state_led_pwr(void)
-{
-	int i_led;
-
-	if (nvram_get_int("front_led_pwr") == 0) {
-		// POWER always OFF
-		i_led = LED_ON;
-	} else {
-		// POWER always ON
-		i_led = LED_OFF;
-	}
-
-	return i_led;
-}
 
 static int btn_name_to_id(const char* name)
 {
@@ -155,21 +140,31 @@ static void btn_released_handle(int btn_id, int count)
 	btn_dbg("released_handle: btn=0x%x, count=%d\n", btn_id, count);
 
 	if (btn_id == BTN_RESET) {
-		if (count > RESET_COUNT) {
+		if (count >= RESET_COUNT) {
 			btn_dbg("perform RESET!!\n");
-			LED_CONTROL(LED_PWR, LED_OFF);
+			led_pwr_usrinverse();
 			btn_reset_action();
-		} else if (count > 0) {
+		} else {
 			btn_dbg("RESET pressed time too short!\n");
-			LED_CONTROL(LED_PWR, LED_ON);
+			led_pwr_usrinverse();
+			sleep(1);
+			led_pwr_resetusr();
 		}
 	} else {
-		if (count > LONG_COUNT) {
+		if (count >= LONG_COUNT) {
 			btn_dbg("perform long event, btn=0x%x\n", btn_id);
+			led_pwr_resetusr();
 			btn_event_long(btn_id);
-		} else if (count > 0 && count < CANCEL_COUNT) {
+		} else if (count >= SHORT_COUNT && count < LONG_COUNT) {
 			btn_dbg("perform short event, btn=0x%x\n", btn_id);
+			ez_action_led_toggle(); // toggle front LED
+			led_pwr_resetusr();
 			btn_event_short(btn_id);
+		} else if (count < SHORT_COUNT) {
+			btn_dbg("perform pressed time too short!\n");
+			led_pwr_usrinverse();
+			sleep(1);
+			led_pwr_resetusr();
 		}
 	}
 }
@@ -186,15 +181,45 @@ static void btn_ev_handle(btn_event *ev)
 		{
 			if (ev->event == BTN_PRESSED) {
 				(btn->count)++;
-				if (LED_PWR & search_gpio_led()) {
-					pwr_led = get_state_led_pwr();
-
-					if (btn->btn_id == BTN_RESET && btn->count == 1) {
-						gpio_led_set(LED_PWR, pwr_led);
-					} else if ((btn->btn_id == BTN_RESET && btn->count > RESET_COUNT) ||
-						(btn->btn_id != BTN_RESET && btn->count > LONG_COUNT)) {
+				if (btn->count == 1)
+					led_pwr_resetsys();
+				
+				if (btn->btn_id == BTN_RESET) {
+					/* pressed > 5s flash power LED */
+					if (btn->count > RESET_COUNT) {
 						btn_dbg("you can release btn now!\n");
-						gpio_led_set(LED_PWR, (btn->count % 2) ? !pwr_led : pwr_led);
+						if (LED_PWR & search_gpio_led())
+							gpio_led_set(LED_PWR, (btn->count % 2) ? LED_OFF : LED_ON);
+						if (LED_PWR2 & search_gpio_led())
+							gpio_led_set(LED_PWR2, (btn->count % 2) ? LED_ON : LED_OFF);
+					}
+				} else {
+					if (btn->count == SHORT_COUNT) {
+						ez_action_led_toggle(); // toggle front LED
+						led_pwr_resetsys();
+					}
+					
+					/* pressed 1s-3s flash power LED */
+					if (btn->count > SHORT_COUNT && btn->count < LONG_COUNT) {
+						btn_dbg("you can release btn now!\n");
+						if (LED_PWR & search_gpio_led())
+							gpio_led_set(LED_PWR, (btn->count % 2) ? LED_OFF : LED_ON);
+						if (LED_PWR2 & search_gpio_led())
+							gpio_led_set(LED_PWR2, (btn->count % 2) ? LED_ON : LED_OFF);
+					}
+					
+					if (btn->count == LONG_COUNT) {
+						ez_action_led_toggle(); // toggle front LED
+						led_pwr_resetsys();
+					}
+					
+					/* pressed > 3s flash power LED */
+					if (btn->count > LONG_COUNT) {
+						btn_dbg("you can release btn now!\n");
+						if (LED_PWR & search_gpio_led())
+							gpio_led_set(LED_PWR, (btn->count % 2) ? LED_OFF : LED_ON);
+						if (LED_PWR2 & search_gpio_led())
+							gpio_led_set(LED_PWR2, (btn->count % 2) ? LED_ON : LED_OFF);
 					}
 				}
 			} else if (ev->event == BTN_RELEASED) {
@@ -202,7 +227,8 @@ static void btn_ev_handle(btn_event *ev)
 				btn->count = 0;
 				ev->event = 0;
 				ev->btn_id = 0;
-				btn_released_handle(btn->btn_id, cnt);
+				if (cnt > 0)
+					btn_released_handle(btn->btn_id, cnt);
 			}
 			break;
 		}

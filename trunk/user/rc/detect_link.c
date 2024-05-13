@@ -93,14 +93,15 @@ dl_handle_link_wan(void)
 
 		front_led_x = nvram_get_int("front_led_wan");
 		if (front_led_x == 1) {
-			LED_CONTROL(LED_WAN, (dl_status_wan) ? LED_ON : LED_OFF);
+			set_led_wan(dl_status_wan, 1, 0);
 		} else if (front_led_x == 2) {
 			if (!get_wan_wisp_active(NULL) && !get_usb_modem_wan(0)) {
 				int dl_state = (dl_status_wan && has_wan_gw4() && has_wan_ip4(1)) ? 1 : 0;
-				LED_CONTROL(LED_WAN, (dl_state) ? LED_ON : LED_OFF);
+				set_led_wan(dl_state, 2, 0);
 			}
 		}
 
+		notify_runfast_detect_internet();
 		front_led_x = nvram_get_int("front_led_lan");
 		if (front_led_x == 1)
 			LED_CONTROL(LED_LAN, (dl_status_wan) ? LED_ON : LED_OFF);
@@ -127,8 +128,11 @@ dl_handle_link_wan(void)
 			}
 		}
 		
-		if (dl_counter_total > 1)
+		if (dl_counter_total > 1) {
 			logmessage("detect_link", "WAN port link %s!", (dl_status_wan) ? "restored" : "down detected");
+			set_led_wan(dl_status_wan, nvram_get_int("front_led_wan"), 1);
+			notify_runfast_detect_internet();
+		}
 	}
 
 	if ((dl_counter_dhcpc_renew > 0) && (dl_counter_total >= dl_counter_dhcpc_renew)) {
@@ -174,8 +178,9 @@ dl_handle_link_wisp(void)
 		front_led_wan = nvram_get_int("front_led_wan");
 		if (front_led_wan == 2) {
 			int dl_state = (dl_status_wisp && has_wan_gw4() && has_wan_ip4(1)) ? 1 : 0;
-			LED_CONTROL(LED_WAN, (dl_state) ? LED_ON : LED_OFF);
+			set_led_wan(dl_state, 2, 0);
 		}
+		notify_runfast_detect_internet();
 	}
 }
 
@@ -270,15 +275,15 @@ dl_update_leds(void)
 			else
 				dl_state = (has_wan_gw4() && has_wan_ip4(0)) ? 1 : 0;
 		} else if (front_led_x == 3) {
-			dl_state = get_internet_state_cached();
+			dl_state = 3;
 		}
 	} else {
 		if (front_led_x == 1)
 			dl_state = dl_status_wan;
 		else if (front_led_x == 3)
-			dl_state = get_internet_state_cached();
+			dl_state = 3;
 	}
-	LED_CONTROL(LED_WAN, (dl_state) ? LED_ON : LED_OFF);
+	set_led_wan(dl_state, front_led_x, 1);
 
 	front_led_x = nvram_get_int("front_led_lan");
 	dl_state = 0;
@@ -302,7 +307,7 @@ dl_update_leds(void)
 #endif
 
 	LED_CONTROL(LED_WIFI, LED_ON);
-	LED_CONTROL(LED_PWR, LED_ON);
+	led_pwr_resetusr();
 	LED_CONTROL(LED_SW2G, LED_ON);
 	LED_CONTROL(LED_SW5G, LED_ON);
 	LED_CONTROL(LED_ROUTER, (dl_is_ap_mode) ? LED_OFF : LED_ON);

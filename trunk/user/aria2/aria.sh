@@ -6,7 +6,11 @@
 SVC_ROOT=0
 
 # process priority (0-normal, 19-lowest)
-SVC_PRIORITY=3
+SVC_PRIORITY=9
+
+# save error/unfinished downloads to FILE_LIST every SAVE_SEC seconds
+# (0) file will be saved only when aria2 exits
+SAVE_SEC=1800
 #######################################################################
 
 SVC_NAME="Aria2"
@@ -29,8 +33,9 @@ func_start()
 	fi
 
 	DIR_CFG="${DIR_LINK}/config"
-	DIR_DL1="`cd \"$DIR_LINK\"; dirname \"$(pwd -P)\"`/Downloads"
-	[ ! -d "$DIR_DL1" ] && DIR_DL1="${DIR_LINK}/downloads"
+	DIR_MDLK="`find /media/ -name aria`"
+	DIR_DL1="`cd \"$DIR_MDLK\"; dirname \"$DIR_MDLK\"`/Downloads"
+	[ ! -d "$DIR_DL1" ] && mkdir -p "$DIR_DL1" && chmod -R 777 "$DIR_DL1"
 
 	[ ! -d "$DIR_CFG" ] && mkdir -p "$DIR_CFG"
 
@@ -74,16 +79,24 @@ allow-overwrite=false
 auto-file-renaming=true
 
 ### Bittorent
-bt-enable-lpd=false
+#BT-Fake
+#user-agent=Deluge 1.3.15
+#peer-agent=Deluge 1.3.15
+#peer-id-prefix=-DE13F0-
+user-agent=qBittorrent/4.1.3
+peer-agent=qBittorrent/4.1.3
+peer-id-prefix=-qB4130-
+bt-detach-seed-only=true
+bt-enable-lpd=true
 #bt-lpd-interface=eth2.2
 bt-max-peers=50
 bt-max-open-files=100
-bt-request-peer-speed-limit=100K
+bt-request-peer-speed-limit=1024K
 bt-stop-timeout=0
 enable-dht=true
 #enable-dht6=false
 enable-peer-exchange=true
-seed-ratio=1.5
+seed-ratio=2
 #seed-time=60
 max-upload-limit=0
 max-overall-upload-limit=0
@@ -94,7 +107,7 @@ ftp-type=binary
 timeout=120
 connect-timeout=60
 split=8
-max-concurrent-downloads=3
+max-concurrent-downloads=8
 max-connection-per-server=8
 min-split-size=1M
 check-certificate=false
@@ -124,9 +137,9 @@ EOF
 		svc_user=" -c nobody"
 	fi
 
-	start-stop-daemon -S -N $SVC_PRIORITY$svc_user -x $SVC_PATH -- \
-		-D --enable-rpc=true --conf-path="$FILE_CONF" --input-file="$FILE_LIST" --save-session="$FILE_LIST" \
-		--rpc-listen-port="$aria_rport" --listen-port="$aria_pport" --dht-listen-port="$aria_pport" $SSL_OPT
+	start-stop-daemon -S -b -N $SVC_PRIORITY$svc_user -x $SVC_PATH -- \
+		-D --conf-path="$FILE_CONF" --input-file="$FILE_LIST" --save-session="$FILE_LIST" --save-session-interval="$SAVE_SEC" \
+		--enable-rpc=true --rpc-listen-port="$aria_rport" --listen-port="$aria_pport" --dht-listen-port="$aria_pport" $SSL_OPT
 
 	if [ $? -eq 0 ] ; then
 		echo "[  OK  ]"

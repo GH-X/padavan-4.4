@@ -26,7 +26,7 @@
 var $j = jQuery.noConflict();
 
 $j(document).ready(function() {
-	init_itoggle('rt_guest_enable', change_guest_enabled); // change_guest_enabled(1) change_guest_enabled(1)
+	init_itoggle('rt_guest_enable', change_guest_enabled); // change_guest_enabled(1)
 	init_itoggle('rt_guest_closed');
 	init_itoggle('rt_guest_ap_isolate');
 	init_itoggle('rt_guest_lan_isolate');
@@ -35,6 +35,8 @@ $j(document).ready(function() {
 
 </script>
 <script>
+
+var macmode = '<% nvram_get_x("", "rt_macmode"); %>';
 
 function initial(){
 	show_banner(1);
@@ -178,7 +180,9 @@ function change_guest_enabled(mflag) {
 	showhide_div('row_guest_10', v);
 	showhide_div('row_guest_11', v);
 	showhide_div('row_guest_12', v);
-	showhide_div('row_guest_13', v);
+	if (macmode != "forceroam") {
+		showhide_div('row_guest_13', v);
+	}
 }
 
 function change_guest_auth_mode(mflag) {

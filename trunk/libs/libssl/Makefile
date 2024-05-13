@@ -1,5 +1,7 @@
-SRC_NAME=openssl-1.1.1k
-SRC_URL=https://www.openssl.org/source/$(SRC_NAME).tar.gz
+SRC_NAME=openssl-1.1.1u
+GIT_NAME=OpenSSL_1_1_1u
+# SRC_URL=https://www.openssl.org/source/$(SRC_NAME).tar.gz
+SRC_URL=https://github.com/openssl/openssl/releases/download/$(GIT_NAME)/$(SRC_NAME).tar.gz
 
 # openssl use CROSS_COMPILE prefix
 CC = gcc

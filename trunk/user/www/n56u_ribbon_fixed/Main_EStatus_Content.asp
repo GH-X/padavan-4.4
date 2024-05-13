@@ -135,7 +135,7 @@ function set_mib_data(){
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
                                             <td style="border-top: 0 none; padding-bottom: 0px;">
-                                                <textarea id="mib_area" rows="23" class="span12" style="height:403px; font-family:'Courier New', Courier, mono; font-size:13px;" readonly="readonly" wrap="off"></textarea>
+                                                <textarea id="mib_area" rows="23" class="span12" style="resize:none; height:403px; font-family:'Courier New', Courier, mono; font-size:13px;" readonly="readonly" wrap="off"></textarea>
                                             </td>
                                         </tr>
                                         <tr>

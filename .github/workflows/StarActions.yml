@@ -1,0 +1,87 @@
+name: StarActions
+
+# Controls when the action will run. 
+on: 
+  watch:
+    types: [started]
+  release:
+    types: [published]
+
+env:
+      images_dir: /opt/images
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-20.04
+    if: github.event.repository.owner.id == github.event.sender.id
+    env:
+      build_variant: ${{ matrix.build_variant }}
+      targets: ${{ matrix.targets }}
+    strategy:
+      matrix:
+        include:
+#          - build_variant: "mt7621"
+#            targets: "K2P_nano K2P DIR-878 CR660x JCG-Q20"
+#          - build_variant: "mt7621-usb-1"
+#            targets: "XY-C1 JCG-836PRO JCG-Y2"
+#          - build_variant: "mt7621-usb-2"
+#            targets: "DIR-882 JCG-AC860M NETGEAR-BZV MI-R3P"
+          - build_variant: "MT7621+MT7603+MT7612-USB"
+            targets: "NEWIFI3"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare environment
+        run: |
+          sudo apt update
+          sudo apt install libtool-bin gperf python3-docutils autopoint gettext
+      - name: Config and Custom
+        run: |
+          cd ${GITHUB_WORKSPACE}/trunk
+          sed -i '/FIRMWARE_BUILDS_VER=/d' versions.inc
+          sed -i '/FIRMWARE_BUILDS_REV=/d' versions.inc
+          echo "FIRMWARE_BUILDS_VER=$(date +%Y)" >> versions.inc
+          echo "FIRMWARE_BUILDS_REV=$(date +%j%H)" >> versions.inc
+          echo "FIRMWARE_BUILDS_RMD=$(date +%m%d)" >> versions.inc
+          FIRMWARE_BUILDS_VER=$(cat versions.inc | grep "FIRMWARE_BUILDS_VER")
+          FIRMWARE_BUILDS_REV=$(cat versions.inc | grep "FIRMWARE_BUILDS_REV")
+          FIRMWARE_BUILDS_RMD=$(cat versions.inc | grep "FIRMWARE_BUILDS_RMD")
+          FB_VER=${FIRMWARE_BUILDS_VER:20} && echo "VER=${FB_VER}" >> $GITHUB_ENV
+          FB_REV=${FIRMWARE_BUILDS_REV:20} && echo "REV=${FB_REV}" >> $GITHUB_ENV
+          FB_RMD=${FIRMWARE_BUILDS_RMD:20} && echo "RMD=${FB_RMD}" >> $GITHUB_ENV
+      - name: Run shellcheck
+        run: sh ./trunk/tools/shellcheck.sh
+      - name: Prepare toolchain
+        run: |
+          cd toolchain-mipsel
+          sh dl_toolchain.sh
+      - name: Start build
+        run: |
+          cd trunk
+          mkdir -p ${images_dir}
+          for m in $targets; do fakeroot ./build_firmware_ci $m; if [ $? = 0 ]; \
+          then cp -f images/*.trx ${images_dir}/$m.${{ env.VER }}_${{ env.REV }}.trx; \
+          else exit 1; fi; ./clear_tree_simple >/dev/null 2>&1; done
+      - name: Create archive
+        run: |
+          ls -lh ${images_dir}
+          build_targets=$(echo "${targets}" | sed 's/ /_/g')
+          image_name="${{ env.VER }}${{ env.RMD }}_${build_variant}_${build_targets}"
+          cd ${images_dir}; md5sum *.trx |tee md5sum.txt; 7z a -mx=9 ${image_name}.7z ./*
+          echo "image_name=${image_name}" >> $GITHUB_ENV
+      - name: Upload images to Artifact
+        if: ${{ github.event_name != 'release' && success() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.image_name }}
+          path: ${{ env.images_dir }}/*.7z
+      - name: Upload images to Releases
+        if: ${{ github.event_name == 'release' && success() }}
+        uses: svenstaro/upload-release-action@2.7.0
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ${{ env.images_dir }}/*.trx
+          tag: ${{ github.ref }}
+          overwrite: true
+          file_glob: true

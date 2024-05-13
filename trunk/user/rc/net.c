@@ -723,16 +723,16 @@ set_nf_conntrack(void)
 {
 	int i_nf_val;
 
-#if (BOARD_RAM_SIZE < 32)
-	int i_nf_lim = 4096;
-#elif (BOARD_RAM_SIZE < 64)
-	int i_nf_lim = 16384;
-#elif (BOARD_RAM_SIZE < 128)
-	int i_nf_lim = 65536;
-#elif (BOARD_RAM_SIZE < 256)
-	int i_nf_lim = 262144;
-#else
+#if (BOARD_RAM_SIZE > 256)
 	int i_nf_lim = 327680;
+#elif (BOARD_RAM_SIZE > 128)
+	int i_nf_lim = 262144;
+#elif (BOARD_RAM_SIZE > 64)
+	int i_nf_lim = 65536;
+#elif (BOARD_RAM_SIZE > 32)
+	int i_nf_lim = 16384;
+#else
+	int i_nf_lim = 4096;
 #endif
 
 	i_nf_val = nvram_safe_get_int("nf_max_conn", 16384, 4096, i_nf_lim);
@@ -762,17 +762,14 @@ set_tcp_tweaks(void)
 	char tmp[64];
 
 	/* Tweak TCP IPv4 performance */
-	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_fin_timeout");
-	fput_int(tmp, 40);		// def: 60
-
 	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_keepalive_intvl");
 	fput_int(tmp, 30);		// def: 75
 
 	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_keepalive_probes");
-	fput_int(tmp, 5);		// def: 9
+	fput_int(tmp, 3);		// def: 9
 
 	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_keepalive_time");
-	fput_int(tmp, 1800);		// def: 7200
+	fput_int(tmp, 300);		// def: 7200
 
 	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_retries2");
 	fput_int(tmp, 5);		// def: 15
@@ -783,14 +780,29 @@ set_tcp_tweaks(void)
 	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_synack_retries");
 	fput_int(tmp, 3);		// def: 5
 
+	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_timestamps");
+	fput_int(tmp, 1);
+
 //	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_tw_recycle");
-//	fput_int(tmp, 1);
+//	fput_int(tmp, 0);
 
 	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_tw_reuse");
 	fput_int(tmp, 1);
 
 	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_rfc1337");
 	fput_int(tmp, 1);
+
+	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_abort_on_overflow");
+	fput_int(tmp, 1);
+
+	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_slow_start_after_idle");
+	fput_int(tmp, 0);
+
+	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_mtu_probing");
+	fput_int(tmp, 1);
+
+	sprintf(tmp, "/proc/sys/net/%s/%s", "ipv4", "tcp_base_mss");
+	fput_int(tmp, 1024);
 }
 
 void

@@ -13,13 +13,15 @@ extern int search_gpio_btn(void);
 #define BTN_FN2			BIT(3)
 
 #define LED_PWR			BIT(0)
-#define LED_WIFI		BIT(1)
-#define LED_SW2G		BIT(2)
-#define LED_SW5G		BIT(3)
-#define LED_WAN			BIT(4)
-#define LED_LAN			BIT(5)
-#define LED_USB			BIT(6)
-#define LED_USB2		BIT(7)
-#define LED_ROUTER		BIT(8)
+#define LED_PWR2		BIT(1)
+#define LED_WIFI		BIT(2)
+#define LED_SW2G		BIT(3)
+#define LED_SW5G		BIT(4)
+#define LED_WAN			BIT(5)
+#define LED_WAN2		BIT(6)
+#define LED_LAN			BIT(7)
+#define LED_USB			BIT(8)
+#define LED_USB2		BIT(9)
+#define LED_ROUTER		BIT(10)
 
 #endif

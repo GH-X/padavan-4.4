@@ -1,3 +1,7 @@
+# NEWIFI3(D2) #
+- 注意(非常重要)
+  - 必须拆除主板上编号为C48的电容(位于CPU旁边), 否则外网(WAN)将不能正常工作
+
 # padavan-4.4 #
 
 This project is based on original rt-n56u with latest mtk 4.4.198 kernel, which is fetch from D-LINK GPL code.

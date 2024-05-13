@@ -304,12 +304,6 @@ get_wan_ether_link_cached(void)
 }
 
 int
-get_internet_state_cached(void)
-{
-	return (nvram_get_int("link_internet") == 1) ? 1 : 0;
-}
-
-int
 ifconfig(const char *ifname, int flags, const char *addr, const char *mask)
 {
 	int sockfd, ret = 0;

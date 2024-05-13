@@ -631,8 +631,8 @@ start_lan(int is_ap_mode, int do_wait)
 			/* manual config lan gateway and dns */
 			lan_up_manual(lan_ifname, lan_dname);
 			
-			/* di wakeup after 2 secs */
-			notify_run_detect_internet(2);
+			/* di wakeup after 6 secs */
+			notify_run_detect_internet(6);
 		}
 	} else {
 		
@@ -657,8 +657,6 @@ stop_lan(int is_ap_mode)
 	char *svcs[] = { "udhcpc", "detect_wan", NULL };
 
 	if (is_ap_mode) {
-		notify_pause_detect_internet();
-		
 		kill_services(svcs, 3, 1);
 	} else {
 		char *lan_ip = nvram_safe_get("lan_ipaddr_t");
@@ -762,6 +760,10 @@ full_restart_lan(void)
 
 	/* start ARP network scanner */
 	start_networkmap(1);
+
+#if BOARD_HAS_2G_RADIO
+	restart_iappd();
+#endif
 
 	/* force httpd logout */
 	doSystem("killall %s %s", "-SIGUSR1", "httpd");
@@ -871,8 +873,8 @@ lan_up_auto(char *lan_ifname, char *lan_gateway, char *lan_dname)
 	config_smb_fastpath(1);
 #endif
 
-	/* di wakeup after 2 secs */
-	notify_run_detect_internet(2);
+	/* di wakeup after 6 secs */
+	notify_run_detect_internet(6);
 }
 
 static void
@@ -880,8 +882,6 @@ lan_down_auto(char *lan_ifname)
 {
 	FILE *fp;
 	char *lan_gateway = nvram_safe_get("lan_gateway_t");
-
-	notify_pause_detect_internet();
 
 	/* Remove default route to gateway if specified */
 	if (is_valid_ipv4(lan_gateway))
@@ -899,6 +899,9 @@ lan_down_auto(char *lan_ifname)
 	/* update SMB fastpath owner address */
 	config_smb_fastpath(1);
 #endif
+
+	/* di wakeup after 6 secs */
+	notify_run_detect_internet(6);
 }
 
 void 

@@ -253,6 +253,10 @@ function pull_usb_share_list(obj,idx){
 function change_smb_enabled(){
 	var v = document.form.enable_samba[0].checked;
 	showhide_div('row_smb_wgrp', v);
+	showhide_div('row_smb_mxmit', v);
+	showhide_div('row_smb_rsize', v);
+	showhide_div('row_smb_rbuf', v);
+	showhide_div('row_smb_wbuf', v);
 	showhide_div('row_smb_mode', v);
 	showhide_div('row_smb_lmb', v);
 	showhide_div('row_smb_fp', v);
@@ -313,6 +317,17 @@ function validForm(){
 
 	String.prototype.Trim = function(){return this.replace(/(^\s*)|(\s*$)/g,"");}
 	document.form.st_samba_workgroup.value = document.form.st_samba_workgroup.value.Trim();
+
+	if(found_app_smbd()){
+		if(!validate_range(document.form.samba_r_size, 256, 2346))
+			return false;
+		if(!validate_range(document.form.samba_m_xmit, 0, 65535))
+			return false;
+		if(!validate_range(document.form.samba_rmem_buf, 0, 65535))
+			return false;
+		if(!validate_range(document.form.samba_wmem_buf, 0, 65535))
+			return false;
+	}
 
 	if(found_app_ftpd()){
 		if(!validate_range(document.form.st_ftp_pmin, 1, 65535))
@@ -398,7 +413,7 @@ function done_validating(action){
                                                     <option value="0" <% nvram_match_x("", "usb3_disable", "0", "selected"); %>><#checkbox_No#> (*)</option>
                                                     <option value="1" <% nvram_match_x("", "usb3_disable", "1", "selected"); %>><#checkbox_Yes#> (<#StorageU3Desc#>)</option>
                                                 </select>
-                                                &nbsp;<span style="color:#888">* need reboot</span>
+                                                &nbsp;<span style="color:#888"><#need_reboot#></span>
                                             </td>
                                         </tr>
                                         <tr id="row_spd">
@@ -433,18 +448,6 @@ function done_validating(action){
                                                 <select name="achk_enable" class="input">
                                                     <option value="0" <% nvram_match_x("", "achk_enable", "0", "selected"); %>><#checkbox_No#> (*)</option>
                                                     <option value="1" <% nvram_match_x("", "achk_enable", "1", "selected"); %>><#checkbox_Yes#></option>
-                                                </select>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th><#StorageCacheReclaim#></th>
-                                            <td>
-                                                <select name="pcache_reclaim" class="input">
-                                                    <option value="0" <% nvram_match_x("", "pcache_reclaim", "0", "selected"); %>><#checkbox_No#></option>
-                                                    <option value="1" <% nvram_match_x("", "pcache_reclaim", "1", "selected"); %>>70% RAM</option>
-                                                    <option value="2" <% nvram_match_x("", "pcache_reclaim", "2", "selected"); %>>50% RAM</option>
-                                                    <option value="3" <% nvram_match_x("", "pcache_reclaim", "3", "selected"); %>>30% RAM</option>
-                                                    <option value="4" <% nvram_match_x("", "pcache_reclaim", "4", "selected"); %>>15% RAM</option>
                                                 </select>
                                             </td>
                                         </tr>
@@ -498,6 +501,42 @@ function done_validating(action){
                                                 <input type="text" name="st_samba_workgroup" class="input" maxlength="32" size="32" value="<% nvram_get_x("", "st_samba_workgroup"); %>"/>
                                             </td>
                                         </tr>
+                                        <tr id="row_smb_rsize">
+                                            <th>
+                                                <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,17, 13);"><#samba_rsize#></a>
+                                            </th>
+                                            <td>
+                                                <input type="text" name="samba_r_size" class="input" maxlength="4" size="4" placeholder="<#Config_Prudent#>" value="<% nvram_get_x("", "samba_r_size"); %>"/>
+                                                &nbsp;<span style="color:#888;">[256..2346]</span>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_smb_mxmit">
+                                            <th>
+                                                <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,17, 14);"><#samba_mxmit#></a>
+                                            </th>
+                                            <td>
+                                                <input type="text" name="samba_m_xmit" class="input" maxlength="5" size="5" placeholder="<#Config_Prudent#>" value="<% nvram_get_x("", "samba_m_xmit"); %>"/>
+                                                &nbsp;<span style="color:#888;">[0..65535]</span>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_smb_rbuf">
+                                            <th>
+                                                <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,17, 15);"><#samba_rmembuf#></a>
+                                            </th>
+                                            <td>
+                                                <input type="text" name="samba_rmem_buf" class="input" maxlength="5" size="5" placeholder="<#Config_Prudent#>" value="<% nvram_get_x("", "samba_rmem_buf"); %>"/>
+                                                &nbsp;<span style="color:#888;">[0..65535]</span>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_smb_wbuf">
+                                            <th>
+                                                <a class="help_tooltip" href="javascript:void(0);" onmouseover="openTooltip(this,17, 16);"><#samba_wmembuf#></a>
+                                            </th>
+                                            <td>
+                                                <input type="text" name="samba_wmem_buf" class="input" maxlength="5" size="5" placeholder="<#Config_Prudent#>" value="<% nvram_get_x("", "samba_wmem_buf"); %>"/>
+                                                &nbsp;<span style="color:#888;">[0..65535]</span>
+                                            </td>
+                                        </tr>
                                         <tr id="row_smb_mode">
                                             <th>
                                                 <#StorageShare#>
@@ -506,7 +545,7 @@ function done_validating(action){
                                                 <select name="st_samba_mode" class="input" style="width: 300px;">
                                                     <option value="1" <% nvram_match_x("", "st_samba_mode", "1", "selected"); %>><#StorageShare1#></option>
                                                     <option value="3" <% nvram_match_x("", "st_samba_mode", "3", "selected"); %>><#StorageShare5#></option>
-                                                    <option value="4" <% nvram_match_x("", "st_samba_mode", "4", "selected"); %>><#StorageShare2#></option>
+                                                    <option value="4" <% nvram_match_x("", "st_samba_mode", "4", "selected"); %>><#StorageShare4#></option>
                                                 </select>
                                             </td>
                                         </tr>

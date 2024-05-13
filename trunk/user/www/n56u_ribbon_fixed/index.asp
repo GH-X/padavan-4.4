@@ -52,6 +52,7 @@ function initial(){
 		$("linkInternet").href = "/device-map/intranet.asp"
 
 	update_internet_status();
+	enableCheckChangedStatus();
 }
 
 function detect_update_info(){
@@ -93,17 +94,25 @@ function set_default_choice(){
 function showMapWANStatus(flag){
 	$j("#internetStatus").removeClass("badge badge-success badge-warning badge-important");
 
-	if(flag == 1){
+	if(flag == 0){
+		$j("#internetStatus").addClass("badge badge-important");
+		$j("#internetStatus").html('<i class="icon-remove icon-white"></i>');
+	}
+	else if(flag == 1){
 		$j("#internetStatus").addClass("badge badge-success");
 		$j("#internetStatus").html('<i class="icon-ok icon-white"></i>');
 	}
 	else if(flag == 2){
+		$j("#internetStatus").addClass("badge badge-success");
+		$j("#internetStatus").html('<i class="icon-plus icon-white"></i>');
+	}
+	else if(flag == 3){
 		$j("#internetStatus").addClass("badge badge-warning");
 		$j("#internetStatus").html('<i class="icon-minus icon-white"></i>');
 	}
 	else{
-		$j("#internetStatus").addClass("badge badge-important");
-		$j("#internetStatus").html('<i class="icon-remove icon-white"></i>');
+		$j("#internetStatus").addClass("badge badge-warning");
+		$j("#internetStatus").html('<i class="icon-refresh icon-white"></i>');
 	}
 }
 

@@ -61,6 +61,16 @@
 #define GROUP_FLAG_DELETE 	1
 #define GROUP_FLAG_ADD 		2
 #define GROUP_FLAG_REMOVE 	3
+#if defined (USE_STORAGE)
+#define FIX_BOOT_TIME		90
+#else
+#define FIX_BOOT_TIME		10
+#endif
+#if defined (APP_SHADOWSOCKS)
+#define FIX_FLASH_TIME	90
+#else
+#define FIX_FLASH_TIME	10
+#endif
 
 static int apply_cgi_group(webs_t wp, int sid, struct variable *var, const char *groupName, int flag);
 static void nvram_clr_group_temp(struct variable *v);
@@ -96,9 +106,12 @@ nvram_commit_safe(void)
 void
 sys_reboot(void)
 {
-#ifdef MTD_FLASH_32M_REBOOT_BUG
 	doSystem("/sbin/mtd_storage.sh %s", "save");
-	system("/bin/mtd_write -r unlock mtd1");
+#if defined (USE_STORAGE)
+	system("ejall");
+#endif
+#ifdef MTD_FLASH_32M_REBOOT_BUG
+	system("/bin/mtd_write -r unlock Config");
 #else
 	kill(1, SIGTERM);
 #endif
@@ -1987,18 +2000,29 @@ static int mentohust_status_hook(int eid, webs_t wp, int argc, char **argv)
 #if defined (APP_SHADOWSOCKS)
 static int shadowsocks_action_hook(int eid, webs_t wp, int argc, char **argv)
 {
-	int needed_seconds = 3;
+	int needed_seconds = 9;
 	char *ss_action = websGetVar(wp, "connect_action", "");
 
-	if (!strcmp(ss_action, "Reconnect")) {
+	if (!strcmp(ss_action, "subRestart")) {
+		doSystem("echo %s > %s", "0", "/tmp/SSP/areconnect");
+		doSystem("echo %s > %s", "1", "/tmp/SSP/startrules");
+		needed_seconds = 9;
+	} else if (!strcmp(ss_action, "Reconnect")) {
 		notify_rc(RCN_RESTART_SHADOWSOCKS);
+		doSystem("echo %s > %s", "1", "/tmp/SSP/areconnect");
+		doSystem("echo %s > %s", "0", "/tmp/SSP/startrules");
+		needed_seconds = 9;
 	} else if (!strcmp(ss_action, "Update_chnroute")) {
 		notify_rc(RCN_RESTART_CHNROUTE_UPD);
+		doSystem("echo %s > %s", "0", "/tmp/SSP/areconnect");
+		doSystem("echo %s > %s", "1", "/tmp/SSP/startrules");
 		needed_seconds = 1;
-	} else if (!strcmp(ss_action, "Reconnect_ss_tunnel")) {
-		notify_rc(RCN_RESTART_SS_TUNNEL);
+	} else if (!strcmp(ss_action, "Update_chnlist")) {
+		notify_rc(RCN_RESTART_CHNLIST_UPD);
+		needed_seconds = 1;
 	} else if (!strcmp(ss_action, "Update_gfwlist")) {
 		notify_rc(RCN_RESTART_GFWLIST_UPD);
+		needed_seconds = 1;
 	}
 	websWrite(wp, "<script>restart_needed_time(%d);</script>\n", needed_seconds);
 	return 0;
@@ -2006,10 +2030,17 @@ static int shadowsocks_action_hook(int eid, webs_t wp, int argc, char **argv)
 
 static int shadowsocks_status_hook(int eid, webs_t wp, int argc, char **argv)
 {
-	int ss_status_code = pids("ss-redir");
-	websWrite(wp, "function shadowsocks_status() { return %d;}\n", ss_status_code);
-	int ss_tunnel_status_code = pids("ss-local");
-	websWrite(wp, "function shadowsocks_tunnel_status() { return %d;}\n", ss_tunnel_status_code);
+	int ss_redir_status_code = pids("ss-redir");
+	int ss_local_status_code = pids("ss-local");
+	if (ss_redir_status_code || ss_local_status_code) {
+		websWrite(wp, "function ss_status() { return %d;}\n", 1);
+	} else {
+		websWrite(wp, "function ss_status() { return %d;}\n", 0);
+	}
+	int ss_forwarder_status_code = pids("dns-forwarder");
+	websWrite(wp, "function forwarder_status() { return %d;}\n", ss_forwarder_status_code);
+	int ss_ipt2socks_status_code = pids("ipt2socks");
+	websWrite(wp, "function ipt2socks_status() { return %d;}\n", ss_ipt2socks_status_code);
 	return 0;
 }
 
@@ -2017,40 +2048,72 @@ static int rules_count_hook(int eid, webs_t wp, int argc, char **argv)
 {
 	FILE *fstream = NULL;
 	char count[8];
+
+	//chnroute_count
 	memset(count, 0, sizeof(count));
 	fstream = popen("cat /etc/storage/chinadns/chnroute.txt |wc -l","r");
 	if(fstream) {
 		fgets(count, sizeof(count), fstream);
 		pclose(fstream);
-	} else {
-		sprintf(count, "%d", 0);
 	}
 	if (strlen(count) > 0)
 		count[strlen(count) - 1] = 0;
+	else
+		sprintf(count, "%d", 0);
 	websWrite(wp, "function chnroute_count() { return '%s';}\n", count);
-#if defined(APP_SHADOWSOCKS)
+
+	//chnlist_count
 	memset(count, 0, sizeof(count));
-	fstream = popen("grep ^server /etc/storage/gfwlist/dnsmasq_gfwlist.conf |wc -l","r");
+	fstream = popen("cat /etc/storage/chnlist/chnlist_domain.txt |wc -l","r");
 	if(fstream) {
 		fgets(count, sizeof(count), fstream);
 		pclose(fstream);
-	} else {
-		sprintf(count, "%d", 0);
 	}
 	if (strlen(count) > 0)
 		count[strlen(count) - 1] = 0;
-	websWrite(wp, "function gfwlist_count() { return '%s';}\n", count);	
-#endif
-	return 0;
-}
+	else
+		sprintf(count, "%d", 0);
+	websWrite(wp, "function chnlist_count() { return '%s';}\n", count);
 
-#endif
+	//gfwlist_count
+	memset(count, 0, sizeof(count));
+	fstream = popen("cat /etc/storage/gfwlist/gfwlist_domain.txt |wc -l","r");
+	if(fstream) {
+		fgets(count, sizeof(count), fstream);
+		pclose(fstream);
+	}
+	if (strlen(count) > 0)
+		count[strlen(count) - 1] = 0;
+	else
+		sprintf(count, "%d", 0);
+	websWrite(wp, "function gfwlist_count() { return '%s';}\n", count);
 
-#if defined(APP_DNSFORWARDER)
-static int dnsforwarder_status_hook(int eid, webs_t wp, int argc, char **argv)
-{
-	int status_code = pids("dns-forwarder");
-	websWrite(wp, "function dnsforwarder_status() { return %d;}\n", status_code);
+	//chn_loadc
+	memset(count, 0, sizeof(count));
+	fstream = popen("ipset list chnlist |grep 'Number of entries' |awk '{print $4}'","r");
+	if(fstream) {
+		fgets(count, sizeof(count), fstream);
+		pclose(fstream);
+	}
+	if (strlen(count) > 0)
+		count[strlen(count) - 1] = 0;
+	else
+		sprintf(count, "%d", 0);
+	websWrite(wp, "function chn_loadc() { return '%s';}\n", count);
+
+	//gfw_loadc
+	memset(count, 0, sizeof(count));
+	fstream = popen("ipset list gfwlist |grep 'Number of entries' |awk '{print $4}'","r");
+	if(fstream) {
+		fgets(count, sizeof(count), fstream);
+		pclose(fstream);
+	}
+	if (strlen(count) > 0)
+		count[strlen(count) - 1] = 0;
+	else
+		sprintf(count, "%d", 0);
+	websWrite(wp, "function gfw_loadc() { return '%s';}\n", count);
+
 	return 0;
 }
 #endif
@@ -2058,7 +2121,8 @@ static int dnsforwarder_status_hook(int eid, webs_t wp, int argc, char **argv)
 static int
 ej_detect_internet_hook(int eid, webs_t wp, int argc, char **argv)
 {
-	kill_pidfile_s("/var/run/detect_internet.pid", SIGHUP);
+	if (pids("detect_internet"))
+		kill_pidfile_s("/var/run/detect_internet.pid", SIGHUP);
 
 	return 0;
 }
@@ -2234,11 +2298,6 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int found_app_shadowsocks = 0;
 #endif
-#if defined(APP_DNSFORWARDER)
-	int found_app_dnsforwarder = 1;
-#else
-	int found_app_dnsforwarder = 0;
-#endif
 #if defined(APP_XUPNPD)
 	int found_app_xupnpd = 1;
 #else
@@ -2265,15 +2324,16 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 	int has_ipv4_ppe = 0;
 	int has_ipv6_ppe = 0;
 #endif
-
-#if (BOARD_RAM_SIZE < 64)
-	int max_conn = 16384;
-#elif (BOARD_RAM_SIZE < 128)
-	int max_conn = 65536;
-#elif (BOARD_RAM_SIZE < 256)
-	int max_conn = 262144;
-#else
+#if (BOARD_RAM_SIZE > 256)
 	int max_conn = 327680;
+#elif (BOARD_RAM_SIZE > 128)
+	int max_conn = 262144;
+#elif (BOARD_RAM_SIZE > 64)
+	int max_conn = 65536;
+#elif (BOARD_RAM_SIZE > 32)
+	int max_conn = 16384;
+#else
+	int max_conn = 4096;
 #endif
 #if defined (USE_NAND_FLASH)
 	int has_mtd_rwfs = 1;
@@ -2384,6 +2444,12 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int has_2g_11ax = 0;
 #endif
+#if defined (STA_FORCE_ROAM)
+	int has_2g_stafr = 1;
+#else
+	int has_2g_stafr = 0;
+#endif
+
 
 	websWrite(wp,
 		"function found_utl_hdparm() { return %d;}\n"
@@ -2403,7 +2469,6 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function found_app_scutclient() { return %d;}\n"
 		"function found_app_ttyd() { return %d;}\n"
 		"function found_app_vlmcsd() { return %d;}\n"
-		"function found_app_dnsforwarder() { return %d;}\n"
 		"function found_app_shadowsocks() { return %d;}\n"
 		"function found_app_xupnpd() { return %d;}\n"
 		"function found_app_mentohust() { return %d;}\n",
@@ -2424,7 +2489,6 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		found_app_scutclient,
 		found_app_ttyd,
 		found_app_vlmcsd,
-		found_app_dnsforwarder,
 		found_app_shadowsocks,
 		found_app_xupnpd,
 		found_app_mentohust
@@ -2467,7 +2531,8 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function support_lan_ap_isolate() { return %d;}\n"
 		"function support_5g_160mhz() { return %d;}\n"
 		"function support_5g_11ax() { return %d;}\n"
-		"function support_2g_11ax() { return %d;}\n",
+		"function support_2g_11ax() { return %d;}\n"
+		"function support_2g_stafr() { return %d;}\n",
 		has_ipv6,
 		has_ipv6_ppe,
 		has_ipv4_ppe,
@@ -2504,7 +2569,8 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		has_lan_ap_isolate,
 		has_5g_160mhz,
 		has_5g_11ax,
-		has_2g_11ax
+		has_2g_11ax,
+		has_2g_stafr
 	);
 
 	return 0;
@@ -2794,8 +2860,8 @@ static int ej_get_static_ccount(int eid, webs_t wp, int argc, char **argv)
 
 static int ej_get_flash_time(int eid, webs_t wp, int argc, char **argv)
 {
-	websWrite(wp, "function board_boot_time() { return %d;}\n", BOARD_BOOT_TIME+5);
-	websWrite(wp, "function board_flash_time() { return %d;}\n", BOARD_FLASH_TIME);
+	websWrite(wp, "function board_boot_time() { return %d;}\n", BOARD_BOOT_TIME+FIX_BOOT_TIME);
+	websWrite(wp, "function board_flash_time() { return %d;}\n", BOARD_FLASH_TIME+FIX_FLASH_TIME);
 
 	return 0;
 }
@@ -4091,9 +4157,6 @@ struct ej_handler ej_handlers[] =
 	{ "shadowsocks_action", shadowsocks_action_hook},
 	{ "shadowsocks_status", shadowsocks_status_hook},
 	{ "rules_count", rules_count_hook},
-#endif
-#if defined (APP_DNSFORWARDER)
-	{ "dnsforwarder_status", dnsforwarder_status_hook},
 #endif
 	{ "openssl_util_hook", openssl_util_hook},
 	{ "openvpn_srv_cert_hook", openvpn_srv_cert_hook},

@@ -179,7 +179,6 @@ extern int       get_usb_modem_wan(int unit);
 extern int       get_usb_modem_dev_wan(int unit, int devnum);
 extern void      set_usb_modem_dev_wan(int unit, int devnum);
 extern int       get_wan_ether_link_cached(void);
-extern int       get_internet_state_cached(void);
 extern int       ifconfig(const char *ifname, int flags, const char *addr, const char *mask);
 extern int       is_interface_exist(const char *ifname);
 extern int       is_interface_up(const char *ifname);

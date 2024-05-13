@@ -546,11 +546,17 @@ FILE *
 write_smb_conf_header(void)
 {
 	FILE *fp;
-	int i_lmb, i_wins_enable;
+	int i_lmb, i_wins_enable, r_size, w_mss, w_rts, m_xmit, rmem_buf, wmem_buf;
 	char *p_computer_name, *p_workgroup, *p_res_order;
 
 	unlink(SAMBA_CONF);
 
+	r_size = nvram_get_int("samba_r_size");
+	w_mss = (r_size);
+	w_rts = (r_size + 1);
+	m_xmit = nvram_get_int("samba_m_xmit");
+	rmem_buf = nvram_get_int("samba_rmem_buf");
+	wmem_buf = nvram_get_int("samba_wmem_buf");
 	i_lmb = nvram_get_int("st_samba_lmb");
 	i_wins_enable = nvram_get_int("wins_enable");
 	p_workgroup = nvram_safe_get("st_samba_workgroup");
@@ -595,7 +601,27 @@ write_smb_conf_header(void)
 	fprintf(fp, "log file = %s\n", "/var/log/samba.log");
 	fprintf(fp, "log level = 0\n");
 	fprintf(fp, "max log size = 5\n");
-	fprintf(fp, "socket options = TCP_NODELAY SO_KEEPALIVE\n");
+	if (r_size != 0)
+#if BOARD_HAS_5G_RADIO
+		nvram_set_int("wl_frag", w_mss);
+		nvram_set_int("wl_rts", w_rts);
+#endif
+#if BOARD_HAS_2G_RADIO
+		nvram_set_int("rt_frag", w_mss);
+		nvram_set_int("rt_rts", w_rts);
+#endif
+		fprintf(fp, "read size = %d\n", r_size);
+	if (m_xmit != 0)
+		fprintf(fp, "max xmit = %d\n", m_xmit);
+	if ((rmem_buf == 0) && (wmem_buf == 0)) {
+		fprintf(fp, "socket options = TCP_NODELAY SO_KEEPALIVE\n");
+	} else if (rmem_buf == 0) {
+		fprintf(fp, "socket options = TCP_NODELAY SO_KEEPALIVE SO_SNDBUF=%d\n", wmem_buf);
+	} else if (wmem_buf == 0) {
+		fprintf(fp, "socket options = TCP_NODELAY SO_KEEPALIVE SO_RCVBUF=%d\n", rmem_buf);
+	} else {
+		fprintf(fp, "socket options = TCP_NODELAY SO_KEEPALIVE SO_RCVBUF=%d SO_SNDBUF=%d\n", rmem_buf, wmem_buf);
+	}
 	fprintf(fp, "unix charset = UTF8\n");
 	fprintf(fp, "display charset = UTF8\n");
 	fprintf(fp, "bind interfaces only = %s\n", "yes");

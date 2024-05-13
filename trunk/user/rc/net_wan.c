@@ -93,11 +93,16 @@ control_wan_led_isp_state(int is_wan_up, int is_modem_unit)
 			if (!get_wan_wisp_active(&has_link) && !is_modem_unit)
 				has_link = get_wan_ether_link_cached();
 		}
-		LED_CONTROL(LED_WAN, (is_wan_up && has_link) ? LED_ON : LED_OFF);
+		if (is_wan_up && has_link)
+			set_led_wan(1, 2, 0);
+		else
+			set_led_wan(0, 2, 0);
 	} else if (front_led_wan == 3) {
 		if (!is_wan_up)
-			LED_CONTROL(LED_WAN, LED_OFF);
+			set_led_wan(0, 3, 0);
 	}
+
+	notify_run_detect_internet(6);
 }
 
 static void
@@ -854,9 +859,6 @@ start_wan(void)
 	set_tcp_syncookies();
 	set_igmp_mld_version();
 
-	/* di wakeup after 60 secs */
-	notify_run_detect_internet(60);
-
 	/* Start each configured and enabled wan connection and its undelying i/f */
 	for (unit = 0; unit < 1; unit++)
 	{
@@ -1020,6 +1022,8 @@ start_wan(void)
 #endif
 		}
 	}
+
+	notify_run_detect_internet(6);
 }
 
 static void
@@ -1040,8 +1044,6 @@ stop_wan_ppp(void)
 	};
 
 	nvram_set_int_temp("deferred_wanup_t", 0);
-
-	notify_pause_detect_internet();
 
 	stop_vpn_client();
 	kill_services(svcs_ppp, 6, 1);
@@ -1086,8 +1088,6 @@ stop_wan(void)
 
 	wan_proto = get_wan_proto(unit);
 	man_ifname = get_man_ifname(unit);
-
-	notify_pause_detect_internet();
 
 	stop_vpn_client();
 
@@ -1360,9 +1360,8 @@ wan_up(char *wan_ifname, int unit, int is_static)
 
 	if (wan_gate)
 		control_wan_led_isp_state(1, modem_unit_id);
-
-	/* di wakeup after 2 secs */
-	notify_run_detect_internet(2);
+	else
+		notify_run_detect_internet(6);
 
 	/* call custom user script */
 	if (check_if_file_exist(script_postw))
@@ -1377,8 +1376,6 @@ wan_down(char *wan_ifname, int unit, int is_static)
 	int wan_proto, modem_unit_id;
 
 	logmessage(LOGNAME, "%s %s (%s)", "WAN", "down", wan_ifname);
-
-	notify_pause_detect_internet();
 
 	/* deferred stop static VPN client (prevent rebuild resolv.conf) */
 	nvram_set_temp("vpnc_dns_t", "");
@@ -1623,11 +1620,11 @@ notify_on_wan_ether_link_restored(void)
 }
 
 void
-notify_on_internet_state_changed(int has_internet, long elapsed)
+notify_on_internet_state_changed(int link_internet, int link_previous, long state_duration)
 {
 	const char *script_inet = SCRIPT_INTERNET_STATE;
 
-	if (!has_internet && !get_ap_mode()) {
+	if (link_internet == 0 && !get_ap_mode()) {
 		int fail_action = nvram_safe_get_int("di_lost_action", 0, 0, 3);
 		switch (fail_action)
 		{
@@ -1650,7 +1647,7 @@ notify_on_internet_state_changed(int has_internet, long elapsed)
 	}
 
 	if (check_if_file_exist(script_inet))
-		doSystem("%s %d %ld", script_inet, has_internet, elapsed);
+		doSystem("%s %d %d %d", script_inet, link_internet, link_previous, state_duration);
 }
 
 int

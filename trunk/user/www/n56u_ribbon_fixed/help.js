@@ -126,7 +126,11 @@ helpcontent[17] = new Array("",
 				"<#BasicConfig_USBStorageWhiteist_itemdesc#>",
 				"<#ShareNode_FTPLANG_itemdesc#>",
 				"<#StorageTorrent_itemdesc#>",
-				"<#StorageAria_itemdesc#>");
+				"<#StorageAria_itemdesc#>",
+				"<#Help_of_read_size#>",
+				"<#Help_of_max_xmit#>",
+				"<#Help_of_SO_RCVBUF#>",
+				"<#Help_of_SO_SNDBUF#>");
 
 // MAC filter
 helpcontent[18] = new Array("",

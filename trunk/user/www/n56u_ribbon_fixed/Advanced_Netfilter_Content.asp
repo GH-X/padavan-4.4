@@ -47,11 +47,11 @@ function initial(){
 		o.remove(6);
 	if (maxc < 262144)
 		o.remove(5);
-	if (maxc < 131072)
-		o.remove(4);
 	if (maxc < 65536)
+		o.remove(4);
+	if (maxc < 16384)
 		o.remove(3);
-	if (maxc < 32768)
+	if (maxc < 4096)
 		o.remove(2);
 
 	change_nat_enable();
@@ -174,11 +174,9 @@ function done_validating(action){
                                             <th width="50%"><#NFilterMaxConn#></th>
                                             <td>
                                                 <select name="nf_max_conn" class="input">
-                                                    <option value="8192" <% nvram_match_x("","nf_max_conn", "8192", "selected"); %>>8192</option>
-                                                    <option value="16384" <% nvram_match_x("","nf_max_conn", "16384", "selected"); %>>16384 (HW_NAT FoE Max)</option>
-                                                    <option value="32768" <% nvram_match_x("","nf_max_conn", "32768", "selected"); %>>32768</option>
+                                                    <option value="4096" <% nvram_match_x("","nf_max_conn", "4096", "selected"); %>>4096 (Low)</option>
+                                                    <option value="16384" <% nvram_match_x("","nf_max_conn", "16384", "selected"); %>>16384 (HWNAT FoE Max)</option>
                                                     <option value="65536" <% nvram_match_x("","nf_max_conn", "65536","selected"); %>>65536</option>
-                                                    <option value="131072" <% nvram_match_x("","nf_max_conn", "131072", "selected"); %>>131072 (Slow)</option>
                                                     <option value="262144" <% nvram_match_x("","nf_max_conn", "262144", "selected"); %>>262144 (Slow)</option>
                                                     <option value="327680" <% nvram_match_x("","nf_max_conn", "327680", "selected"); %>>327680 (Slow)</option>
                                                 </select>

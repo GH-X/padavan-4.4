@@ -94,6 +94,7 @@ romfs:
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_vpn_client
 	cd $(INSTALLDIR)/sbin && ln -sf rc run_telnetd
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_firewall
+	cd $(INSTALLDIR)/sbin && ln -sf rc restart_crond
 	cd $(INSTALLDIR)/sbin && ln -sf rc pids
 	cd $(INSTALLDIR)/sbin && ln -sf rc rstats
 	cd $(INSTALLDIR)/sbin && ln -sf rc stop_wan
@@ -200,7 +201,6 @@ ifdef CONFIG_USB_SUPPORT
 	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_tty
 	cd $(INSTALLDIR)/sbin && ln -sf rc mdev_wdm
 	cd $(INSTALLDIR)/sbin && ln -sf rc zerocd
-	cd $(INSTALLDIR)/sbin && ln -sf rc usb5v
 	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb
 	cd $(INSTALLDIR)/sbin && ln -sf rc ejusb1
 ifneq ($(BOARD_NUM_USB_PORTS),1)

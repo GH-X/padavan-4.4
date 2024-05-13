@@ -73,7 +73,7 @@ install:
 	$(MAKE) -C $(SRC_NAME) install DESTDIR=""
 
 romfs:
-ifeq ($(CONFIG_FIRMWARE_INCLUDE_CURL),y)
 	$(ROMFSINST) -d $(DESTDIR)/bin/curl /usr/bin/curl
-endif
 	cp -fP $(DESTDIR)/lib/libcurl.so* $(ROMFSDIR)/lib
+	ln -sf libcurl.so.4.7.0 $(ROMFSDIR)/lib/libcurl.so.4
+

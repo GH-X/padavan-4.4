@@ -380,31 +380,6 @@ update_router_mode(void)
 }
 
 void
-set_pagecache_reclaim(void)
-{
-	int pagecache_ratio = 100;
-	int pagecache_reclaim = nvram_get_int("pcache_reclaim");
-
-	switch (pagecache_reclaim)
-	{
-	case 1:
-		pagecache_ratio = 30;
-		break;
-	case 2:
-		pagecache_ratio = 50;
-		break;
-	case 3:
-		pagecache_ratio = 70;
-		break;
-	case 4:
-		pagecache_ratio = 85;
-		break;
-	}
-
-	fput_int("/proc/sys/vm/pagecache_ratio", pagecache_ratio);
-}
-
-void
 restart_all_sysctl(void)
 {
 	if (!get_ap_mode()) {

@@ -247,7 +247,6 @@ function change_crond_enabled(){
 
 function change_ttyd_enabled(){
 	var v = document.form.ttyd_enable[0].checked;
-	showhide_div('ttyd_webui', v);
 	showhide_div('ttyd_port', v);
 }
 
@@ -394,7 +393,7 @@ function on_ttyd_link(){
                                             <td colspan="4" style="padding-bottom: 0px;">
                                                 <a href="javascript:spoiler_toggle('ca.crt')"><span>Root CA Certificate (optional)</span></a>
                                                 <div id="ca.crt" style="display:none;">
-                                                    <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="httpssl.ca.crt" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("httpssl.ca.crt",""); %></textarea>
+                                                    <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="httpssl.ca.crt" style="resize:none; font-family:'Courier New'; font-size:12px;"><% nvram_dump("httpssl.ca.crt",""); %></textarea>
                                                 </div>
                                             </td>
                                         </tr>
@@ -402,7 +401,7 @@ function on_ttyd_link(){
                                             <td colspan="4" style="padding-bottom: 0px; border-top: 0 none;">
                                                 <a href="javascript:spoiler_toggle('dh1024.pem')"><span>Diffie-Hellman PEM (optional)</span></a>
                                                 <div id="dh1024.pem" style="display:none;">
-                                                    <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="httpssl.dh1024.pem" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("httpssl.dh1024.pem",""); %></textarea>
+                                                    <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="httpssl.dh1024.pem" style="resize:none; font-family:'Courier New'; font-size:12px;"><% nvram_dump("httpssl.dh1024.pem",""); %></textarea>
                                                 </div>
                                             </td>
                                         </tr>
@@ -410,7 +409,7 @@ function on_ttyd_link(){
                                             <td colspan="4" style="padding-bottom: 0px; border-top: 0 none;">
                                                 <a href="javascript:spoiler_toggle('server.crt')"><span>Server Certificate (required)</span></a>
                                                 <div id="server.crt" style="display:none;">
-                                                    <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="httpssl.server.crt" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("httpssl.server.crt",""); %></textarea>
+                                                    <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="httpssl.server.crt" style="resize:none; font-family:'Courier New'; font-size:12px;"><% nvram_dump("httpssl.server.crt",""); %></textarea>
                                                 </div>
                                             </td>
                                         </tr>
@@ -418,7 +417,7 @@ function on_ttyd_link(){
                                             <td colspan="4" style="padding-bottom: 0px; border-top: 0 none;">
                                                 <a href="javascript:spoiler_toggle('server.key')"><span>Server Private Key (required)</span></a>
                                                 <div id="server.key" style="display:none;">
-                                                    <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="httpssl.server.key" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("httpssl.server.key",""); %></textarea>
+                                                    <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="httpssl.server.key" style="resize:none; font-family:'Courier New'; font-size:12px;"><% nvram_dump("httpssl.server.key",""); %></textarea>
                                                 </div>
                                             </td>
                                         </tr>
@@ -456,7 +455,7 @@ function on_ttyd_link(){
                                             <td colspan="2" style="padding-bottom: 0px;">
                                                 <a href="javascript:spoiler_toggle('authorized_keys')"><span><#Adm_System_sshd_keys#> (authorized_keys)</span></a>
                                                 <div id="authorized_keys" style="display:none;">
-                                                    <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.authorized_keys" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.authorized_keys",""); %></textarea>
+                                                    <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.authorized_keys" style="resize:none; font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.authorized_keys",""); %></textarea>
                                                 </div>
                                             </td>
                                         </tr>
@@ -464,7 +463,7 @@ function on_ttyd_link(){
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table" id="tbl_wins" style="display:none">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;">Windows Internet Name Service (WINS)</th>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#Adm_Svc_Windows_Internet_Name_Service#></th>
                                         </tr>
                                         <tr>
                                             <th width="50%"><#Adm_Svc_wins#></th>
@@ -504,7 +503,7 @@ function on_ttyd_link(){
 
                                     <table width="100%" id="tbl_ttyd" cellpadding="4" cellspacing="0" class="table" style="display:none;">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#Adm_Svc_ttyd_setup#></th>
+                                            <th colspan="3" style="background-color: #E3E3E3;"><#Adm_Svc_ttyd_setup#></th>
                                         </tr>
                                         <tr id="div_ttyd">
                                             <th width="50%"><#Adm_Svc_ttyd_enable#></th>
@@ -520,14 +519,13 @@ function on_ttyd_link(){
                                                 </div>
                                             </td>
                                         </tr>
-                                        <tr id="ttyd_port"> <th width="50%"><#Adm_Svc_ttyd_port#></th>
+                                        <tr id="ttyd_port">
+                                            <th width="50%"><#Adm_Svc_ttyd_port#></th>
                                             <td>
-                                                <input type="text" maxlength="6" class="input" size="15" name="ttyd_port" style="width: 145px" value="<% nvram_get_x("","ttyd_port"); %>" />
+                                                <input type="text" maxlength="5" class="input" size="5" name="ttyd_port" style="width: 83px" value="<% nvram_get_x("","ttyd_port"); %>" onkeypress="return is_number(this,event);"/>
                                             </td>
-                                        </tr>
-                                        <tr id="ttyd_webui">
                                             <td>
-                                                <a href="javascript:on_ttyd_link();" id="web_ttyd_link">ttyd Web Shell</a>
+                                                <a href="javascript:on_ttyd_link();" id="web_ttyd_link"><#WebControl#></a>
                                             </td>
                                         </tr>
                                     </table>
@@ -598,7 +596,7 @@ function on_ttyd_link(){
                                             <td colspan="2">
                                                 <a href="javascript:spoiler_toggle('crond_crontabs')"><span><#Adm_Svc_crontabs#></span></a>
                                                 <div id="crond_crontabs" style="display:none;">
-                                                    <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="crontab.login" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("crontab.login",""); %></textarea>
+                                                    <textarea rows="8" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="crontab.login" style="resize:none; font-family:'Courier New'; font-size:12px;"><% nvram_dump("crontab.login",""); %></textarea>
                                                 </div>
                                             </td>
                                         </tr>

@@ -233,6 +233,91 @@ init_gpio_leds_buttons(void)
 	LED_CONTROL(LED_PWR, LED_ON);
 }
 
+static int
+get_state_led_pwr(void)
+{
+	int need_on_off;
+
+	if (nvram_get_int("front_led_pwr") == 0) {
+		// POWER always OFF
+		need_on_off = LED_ON;
+	} else {
+		// POWER always ON
+		need_on_off = LED_OFF;
+	}
+
+	return need_on_off;
+}
+
+void
+led_pwr_resetusr(void)
+{
+	LED_CONTROL(LED_PWR, LED_ON);
+	LED_CONTROL(LED_PWR2, LED_OFF);
+}
+
+void
+led_pwr_resetsys(void)
+{
+	if (search_gpio_led() & LED_PWR) {
+		int need_on_off = get_state_led_pwr();
+		if (need_on_off == LED_ON)
+			gpio_led_set(LED_PWR, LED_ON);
+	}
+	
+	if (search_gpio_led() & LED_PWR2)
+		gpio_led_set(LED_PWR2, LED_OFF);
+}
+
+void
+led_pwr_usrinverse(void)
+{
+	if (search_gpio_led() & LED_PWR)
+		gpio_led_set(LED_PWR, get_state_led_pwr());
+	
+	if (search_gpio_led() & LED_PWR2)
+		gpio_led_set(LED_PWR2, LED_ON);
+}
+
+int
+set_led_wan(int state, int ledwl, int force)
+{
+	int led_show = nvram_get_int("led_front_t");
+	int led_wan_level = nvram_get_int("front_led_wan");
+
+	if ((state == 0 && ledwl == 0 && force == 1) || led_show == 0) {
+		if (search_gpio_led() & LED_WAN)
+			gpio_led_set(LED_WAN, LED_OFF);
+		
+		if (search_gpio_led() & LED_WAN2)
+			gpio_led_set(LED_WAN2, LED_OFF);
+	}
+
+	if (state == 3 && ledwl != 0 && ledwl == led_wan_level && led_show == 1) {
+		if (search_gpio_led() & LED_WAN)
+			gpio_led_set(LED_WAN, (nvram_get_int("link_internet") == 0) ? LED_ON : LED_OFF);
+		
+		if (search_gpio_led() & LED_WAN2)
+			gpio_led_set(LED_WAN2, (nvram_get_int("link_internet") == 0) ? LED_OFF : LED_ON);
+		
+		sleep(1);
+	}
+
+	if (force == 1 || state != nvram_get_int("link_internet")) {
+		if (state >= 0 && state <= 2)
+			nvram_set_int_temp("link_internet", state);
+		if (ledwl != 0 && ledwl == led_wan_level && led_show == 1) {
+			if (search_gpio_led() & LED_WAN)
+				gpio_led_set(LED_WAN, (nvram_get_int("link_internet") >= 1) ? LED_ON : LED_OFF);
+			
+			if (search_gpio_led() & LED_WAN2)
+				gpio_led_set(LED_WAN2, (nvram_get_int("link_internet") >= 1) ? LED_OFF : LED_ON);
+		}
+	}
+
+	return nvram_get_int("link_internet");
+}
+
 static void
 set_wan0_vars(void)
 {
@@ -405,7 +490,7 @@ nvram_convert_misc_values(void)
 	nvram_set_temp("login_timestamp", "0000000000");
 
 	nvram_set_int_temp("networkmap_fullscan", 0);
-	nvram_set_int_temp("link_internet", 2);
+	nvram_set_int_temp("link_internet", 3);
 	nvram_set_int_temp("link_wan", 0);
 
 	nvram_set_int_temp("led_front_t", 1);
@@ -480,6 +565,7 @@ flash_firmware(void)
 			 "wpa_supplicant",
 			 NULL };
 
+	led_pwr_usrinverse();
 	stop_misc();
 	stop_services(0); // don't stop httpd/telnetd/sshd/vpn
 
@@ -493,6 +579,7 @@ flash_firmware(void)
 	stop_usb_printer_spoolers();
 #endif
 	stop_igmpproxy(NULL);
+	stop_detect_internet();
 
 	kill_services(svcs, 6, 1);
 
@@ -608,6 +695,9 @@ LED_CONTROL(int gpio_led, int flag)
 	case LED_WAN:
 		front_led_x = nvram_get_int("front_led_wan");
 		break;
+	case LED_WAN2:
+		front_led_x = 1;
+		break;
 	case LED_LAN:
 		front_led_x = nvram_get_int("front_led_lan");
 		break;
@@ -637,6 +727,9 @@ LED_CONTROL(int gpio_led, int flag)
 	case LED_PWR:
 		front_led_x = nvram_get_int("front_led_pwr");
 		break;
+	case LED_PWR2:
+		front_led_x = 0;
+		break;
 	default:
 		return;
 	}
@@ -662,9 +755,10 @@ init_crontab(void)
 	ret |= system("/sbin/check_crontab.sh a/1 a a a a scutclient_watchcat.sh");
 #endif
 #if defined (APP_SHADOWSOCKS)
-	ret |= system("/sbin/check_crontab.sh a/5 a a a a ss-watchcat.sh");
-	ret |= system("/sbin/check_crontab.sh 0 8 a/10 a a update_chnroute.sh");
-	ret |= system("/sbin/check_crontab.sh 0 7 a/10 a a update_gfwlist.sh");
+	ret |= system("/sbin/check_crontab.sh 9 4 a a 4 update_chnroute.sh");
+	ret |= system("/sbin/check_crontab.sh 5 4 a a 4 update_chnlist.sh");
+	ret |= system("/sbin/check_crontab.sh 1 4 a a 4 update_gfwlist.sh");
+	ret |= system("/sbin/check_crontab.sh a/1 a a a a ss-watchcat.sh");
 #endif
 	return ret;
 }
@@ -696,8 +790,8 @@ init_router(void)
 
 	mount_rwfs_partition();
 
-	gen_ralink_config_2g(0);
 	gen_ralink_config_5g(0);
+	gen_ralink_config_2g(0);
 	load_wireless_modules();
 #if defined (USE_MMC_SUPPORT)
 	load_mmc_modules();
@@ -718,7 +812,6 @@ init_router(void)
 	recreate_passwd_unix(1);
 
 	set_timezone();
-	set_pagecache_reclaim();
 
 	storage_load_time();
 
@@ -803,8 +896,8 @@ shutdown_router(int level)
 		stop_services_lan_wan();
 		set_ipv4_forward(0);
 	}
-
-	LED_CONTROL(LED_WAN, LED_OFF);
+	stop_detect_internet();
+	set_led_wan(0, 0, 1);
 
 	storage_save_time(10);
 	write_storage_to_mtd();
@@ -825,7 +918,7 @@ shutdown_router(int level)
 	}
 
 	LED_CONTROL(LED_LAN, LED_OFF);
-	LED_CONTROL(LED_PWR, LED_OFF);
+	led_pwr_usrinverse();
 }
 
 void 
@@ -1008,7 +1101,6 @@ handle_notifications(void)
 		else if (strcmp(entry->d_name, RCN_RESTART_HDDTUNE) == 0)
 		{
 			system("/sbin/hddtune.sh");
-			set_pagecache_reclaim();
 		}
 #if defined(APP_FTPD)
 		else if (strcmp(entry->d_name, RCN_RESTART_FTPD) == 0)
@@ -1103,13 +1195,13 @@ handle_notifications(void)
 		{
 			restart_ss();
 		}
-		else if (strcmp(entry->d_name, RCN_RESTART_SS_TUNNEL) == 0)
-		{
-			restart_ss_tunnel();
-		}
 		else if (strcmp(entry->d_name, RCN_RESTART_CHNROUTE_UPD) == 0)
 		{
 			update_chnroute();
+		}
+		else if (strcmp(entry->d_name, RCN_RESTART_CHNLIST_UPD) == 0)
+		{
+			update_chnlist();
 		}
 		else if (strcmp(entry->d_name, RCN_RESTART_GFWLIST_UPD) == 0)
 		{
@@ -1180,7 +1272,7 @@ handle_notifications(void)
 		else if (strcmp(entry->d_name, RCN_RESTART_DI) == 0)
 		{
 			if (get_ap_mode() || has_wan_ip4(0))
-				notify_run_detect_internet(2);
+				notify_runfast_detect_internet();
 		}
 		else if (strcmp(entry->d_name, RCN_RESTART_DHCPD) == 0)
 		{
@@ -1438,6 +1530,7 @@ main(int argc, char **argv)
 			return -1;
 		}
 		init_main_loop();
+		led_pwr_resetusr();
 		return 0;
 	}
 
@@ -1447,10 +1540,18 @@ main(int argc, char **argv)
 	}
 
 	if (!strcmp(base, "reboot")) {
+		write_storage_to_mtd();
+#if defined (USE_STORAGE)
+		safe_remove_all_stor_devices(1);
+#endif
 		return sys_exit();
 	}
 
 	if (!strcmp(base, "shutdown") || !strcmp(base, "halt")) {
+		write_storage_to_mtd();
+#if defined (USE_STORAGE)
+		safe_remove_all_stor_devices(1);
+#endif
 		return sys_stop();
 	}
 
@@ -1592,6 +1693,9 @@ main(int argc, char **argv)
 	}
 	else if (!strcmp(base, "restart_firewall")) {
 		restart_firewall();
+	}
+	else if (!strcmp(base, "restart_crond")) {
+		restart_crond();
 	}
 	else if (!strcmp(base, "radio2_toggle")) {
 		manual_toggle_radio_rt(-1);

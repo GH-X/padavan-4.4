@@ -1397,7 +1397,7 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	fprintf(fp, "AccessPolicy%d=%d\n", 0, i_val);
 
 	list[0] = 0;
-	if (i_val != 0)
+	if ((!strcmp(p_str, "forceroam")) || (i_val != 0))
 	{
 		char wlan_param[32], macbuf[24];
 		
@@ -1421,12 +1421,12 @@ gen_ralink_config(int is_soc_ap, int is_aband, int disable_autoscan)
 	}
 	else
 	{
-		fprintf(fp, "AccessPolicy%d=%d\n", 1, 0);
+		fprintf(fp, "AccessPolicy%d=%d\n", 1, 2);
 		fprintf(fp, "AccessControlList%d=%s\n", 1, "");
 	}
 
 	for (i = 2; i <= 8; i++) {
-		fprintf(fp, "AccessPolicy%d=%d\n", i, 0);
+		fprintf(fp, "AccessPolicy%d=%d\n", i, 2);
 		fprintf(fp, "AccessControlList%d=%s\n", i, "");
 	}
 

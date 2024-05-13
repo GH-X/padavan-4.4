@@ -511,7 +511,9 @@ kill_pidfile_s(char *pidfile, int sig)
 		if (fgets(buf, sizeof(buf), fp)) {
 			pid = strtoul(buf, NULL, 0);
 			if (pid > 1 && pid < ULONG_MAX)
-				ret = kill(pid, sig);
+				while (ret != 0) {
+					ret = kill(pid, sig);
+				}
 		}
 		fclose(fp);
 	}

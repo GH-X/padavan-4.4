@@ -34,7 +34,7 @@
 #include <bin_sem_asus.h>
 
 /* do not set current year, it used for ntp done check! */
-#define SYS_START_YEAR			2015
+#define SYS_START_YEAR			2021
 
 #define DNS_RESOLV_CONF			"/etc/resolv.conf"
 #define DNS_SERVERS_FILE		"/tmp/dnsmasq.servers"
@@ -51,6 +51,10 @@
 #define SCRIPT_POST_WAN			"/etc/storage/post_wan_script.sh"
 #define SCRIPT_POST_FIREWALL		"/etc/storage/post_iptables_script.sh"
 #define SCRIPT_INTERNET_STATE		"/etc/storage/inet_state_script.sh"
+#define SCRIPT_DETECTINTERNET_A		"/etc/storage/detectinternet_1.sh"
+#define SCRIPT_DETECTINTERNET_B		"/etc/storage/detectinternet_2.sh"
+#define SCRIPT_DETECTINTERNET_C		"/etc/storage/detectinternet_3.sh"
+#define SCRIPT_DETECTINTERNET_D		"/etc/storage/detectinternet_4.sh"
 #define SCRIPT_SHUTDOWN			"/etc/storage/shutdown_script.sh"
 
 #define SCRIPT_OVPN_SERVER		"ovpns.script"
@@ -105,36 +109,51 @@
 // for log message title
 #define LOGNAME				BOARD_NAME
 
-#if BOARD_RAM_SIZE > 128
- #define KERNEL_NET_CORE_RMEM		1310720
- #define KERNEL_NET_CORE_WMEM		1310720
- #define KERNEL_MIN_FREE_KBYTES		12288
- #define DNS_RELAY_CACHE_MAX		1536
- #define LOG_ROTATE_SIZE_MAX		1024
+#if BOARD_RAM_SIZE > 256
+ #define KERNEL_NET_CORE_RMEM		8388608
+ #define KERNEL_NET_CORE_WMEM		8388608
+ #define KERNEL_NET_SOMAXCONN		16384
+ #define KERNEL_NET_TCP_MAXORPHANS	6144
+ #define KERNEL_NET_TCP_FINTIMEOUT	5
+ #define KERNEL_MIN_FREE_KBYTES		2896
+ #define DNS_RELAY_CACHE_MAX		896
+ #define LOG_ROTATE_SIZE_MAX		896
+#elif BOARD_RAM_SIZE > 128
+ #define KERNEL_NET_CORE_RMEM		4194304
+ #define KERNEL_NET_CORE_WMEM		4194304
+ #define KERNEL_NET_SOMAXCONN		8192
+ #define KERNEL_NET_TCP_MAXORPHANS	3072
+ #define KERNEL_NET_TCP_FINTIMEOUT	4
+ #define KERNEL_MIN_FREE_KBYTES		2048
+ #define DNS_RELAY_CACHE_MAX		768
+ #define LOG_ROTATE_SIZE_MAX		768
 #elif BOARD_RAM_SIZE > 64
- #define KERNEL_NET_CORE_RMEM		983040
- #define KERNEL_NET_CORE_WMEM		983040
- #define KERNEL_MIN_FREE_KBYTES		8192
- #define DNS_RELAY_CACHE_MAX		1024
+ #define KERNEL_NET_CORE_RMEM		2097152
+ #define KERNEL_NET_CORE_WMEM		2097152
+ #define KERNEL_NET_SOMAXCONN		4096
+ #define KERNEL_NET_TCP_MAXORPHANS	1536
+ #define KERNEL_NET_TCP_FINTIMEOUT	3
+ #define KERNEL_MIN_FREE_KBYTES		1448
+ #define DNS_RELAY_CACHE_MAX		512
  #define LOG_ROTATE_SIZE_MAX		512
 #elif BOARD_RAM_SIZE > 32
- #define KERNEL_NET_CORE_RMEM		655360
- #define KERNEL_NET_CORE_WMEM		655360
- #define KERNEL_MIN_FREE_KBYTES		4096
- #define DNS_RELAY_CACHE_MAX		512
- #define LOG_ROTATE_SIZE_MAX		256
-#elif BOARD_RAM_SIZE > 16
- #define KERNEL_NET_CORE_RMEM		327680
- #define KERNEL_NET_CORE_WMEM		327680
- #define KERNEL_MIN_FREE_KBYTES		2048
- #define DNS_RELAY_CACHE_MAX		256
- #define LOG_ROTATE_SIZE_MAX		128
-#else
- #define KERNEL_NET_CORE_RMEM		163840
- #define KERNEL_NET_CORE_WMEM		163840
+ #define KERNEL_NET_CORE_RMEM		1048576
+ #define KERNEL_NET_CORE_WMEM		1048576
+ #define KERNEL_NET_SOMAXCONN		2048
+ #define KERNEL_NET_TCP_MAXORPHANS	768
+ #define KERNEL_NET_TCP_FINTIMEOUT	2
  #define KERNEL_MIN_FREE_KBYTES		1024
- #define DNS_RELAY_CACHE_MAX		160
- #define LOG_ROTATE_SIZE_MAX		80
+ #define DNS_RELAY_CACHE_MAX		256
+ #define LOG_ROTATE_SIZE_MAX		256
+#else
+ #define KERNEL_NET_CORE_RMEM		524288
+ #define KERNEL_NET_CORE_WMEM		524288
+ #define KERNEL_NET_SOMAXCONN		1024
+ #define KERNEL_NET_TCP_MAXORPHANS	384
+ #define KERNEL_NET_TCP_FINTIMEOUT	1
+ #define KERNEL_MIN_FREE_KBYTES		724
+ #define DNS_RELAY_CACHE_MAX		128
+ #define LOG_ROTATE_SIZE_MAX		128
 #endif
 
 //////////////////////////////////////////////////////////
@@ -152,6 +171,10 @@ void storage_save_time(time_t delta);
 void write_storage_to_mtd(void);
 void erase_storage(void);
 void erase_nvram(void);
+void led_pwr_resetusr(void);
+void led_pwr_resetsys(void);
+void led_pwr_usrinverse(void);
+int  set_led_wan(int state, int ledwl, int force);
 
 /* init.c */
 void init_main_loop(void);
@@ -168,7 +191,6 @@ void stop_auth_kabinet(void);
 /* common_ex.c */
 long uptime(void);
 int rand_seed_by_time(void);
-void set_pagecache_reclaim(void);
 void restart_all_sysctl(void);
 void update_router_mode();
 char *mac_conv(const char *mac_nvkey, int idx, char *buf);
@@ -286,7 +308,7 @@ void manual_wan_disconnect(void);
 void manual_wisp_reassoc(void);
 void deferred_wan_connect(void);
 void notify_on_wan_ether_link_restored(void);
-void notify_on_internet_state_changed(int has_internet, long elapsed);
+void notify_on_internet_state_changed(int link_internet, int link_previous, long state_duration);
 void add_dhcp_routes(char *rt, char *rt_rfc, char *rt_ms, char *ifname, int metric);
 void add_dhcp_routes_by_prefix(char *prefix, char *ifname, int metric);
 int  add_static_wan_routes(char *wan_ifname);
@@ -532,10 +554,8 @@ void restart_ttyd(void);
 void stop_ss(void);
 void start_ss(void);
 void restart_ss(void);
-void stop_ss_tunnel(void);
-void start_ss_tunnel(void);
-void restart_ss_tunnel(void);
 void update_chnroute(void);
+void update_chnlist(void);
 void update_gfwlist(void);
 #endif
 #if defined(APP_VLMCSD)
@@ -543,10 +563,10 @@ void stop_vlmcsd(void);
 void start_vlmcsd(void);
 void restart_vlmcsd(void);
 #endif
-#if defined(APP_DNSFORWARDER)
-void stop_dnsforwarder(void);
-void start_dnsforwarder(void);
-void restart_dnsforwarder(void);
+#if BOARD_HAS_2G_RADIO
+void stop_iappd(void);
+void start_iappd(void);
+void restart_iappd(void);
 #endif
 
 /* services_ex.c */
@@ -692,9 +712,12 @@ int  start_watchdog(void);
 void notify_watchdog_time(void);
 void notify_watchdog_wifi(int is_5ghz);
 
+/* gpio_btn.c */
 int  btn_main(int argc, char *argv[]);
 int  start_gpio_btn(void);
-int  get_state_led_pwr(void);
+
+/* btn_action.c */
+void ez_action_led_toggle(void);
 void btn_reset_action(void);
 void btn_event_long(int btn_id);
 void btn_event_short(int btn_id);
@@ -735,7 +758,7 @@ int detect_internet_main(int argc, char *argv[]);
 int start_detect_internet(int autorun_time);
 void stop_detect_internet(void);
 void notify_run_detect_internet(int delay_time);
-void notify_pause_detect_internet(void);
+void notify_runfast_detect_internet(void);
 
 /* detect_wan.c */
 int detect_wan_main(int argc, char *argv[]);

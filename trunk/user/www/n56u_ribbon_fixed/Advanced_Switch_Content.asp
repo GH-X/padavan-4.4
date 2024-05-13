@@ -243,7 +243,7 @@ function done_validating(action){
                                             <th colspan="2" style="background-color: #E3E3E3;"><#SwitchBase#></th>
                                         </tr>
                                         <tr id="row_ether_jumbo">
-                                            <th><#SwitchJumbo#></th>
+                                            <th width="50%"><#SwitchJumbo#></th>
                                             <td>
                                                 <select name="ether_jumbo" class="input">
                                                     <option value="0" <% nvram_match_x("","ether_jumbo", "0","selected"); %>>Up to 1536 bytes</option>

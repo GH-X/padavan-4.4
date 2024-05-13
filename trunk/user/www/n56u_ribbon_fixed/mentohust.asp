@@ -32,7 +32,7 @@ $j(document).ready(function(){
 
 function initial(){
 	show_banner(2);
-	show_menu(5,14,1);
+	show_menu(5,13,1);
 	show_footer();
 	var o1 = document.form.mentohust_startmode;
 	var o2 = document.form.mentohust_dhcp;

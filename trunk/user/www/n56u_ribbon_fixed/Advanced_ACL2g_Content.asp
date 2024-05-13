@@ -46,6 +46,8 @@ function initial(){
 	if (!support_5g_radio()) {
 		document.form.goto5.style.display = "none";
 		$("col_goto5").width = "33%";
+	} else if (support_2g_stafr()) {
+		showhide_div("row_forceroam", 1);
 	}
 
 	change_mac_enabled();
@@ -296,6 +298,7 @@ function done_validating(action){
                                                     <option value="disabled" <% nvram_match_x("","rt_macmode", "disabled","selected"); %>><#CTL_Disabled#></option>
                                                     <option value="allow" <% nvram_match_x("","rt_macmode", "allow","selected"); %>><#FirewallConfig_MFMethod_item1#></option>
                                                     <option value="deny" <% nvram_match_x("","rt_macmode", "deny","selected"); %>><#FirewallConfig_MFMethod_item2#></option>
+                                                    <option id="row_forceroam" style="display:none;" value="forceroam" <% nvram_match_x("","rt_macmode", "forceroam","selected"); %>><#FirewallConfig_MFMethod_item3#></option>
                                                 </select>
                                             </td>
                                         </tr>

@@ -168,8 +168,8 @@ struct nvram_pair router_defaults[] = {
 	{ "wl_channel", "0" },			/* Channel number */
 	{ "wl_bcn", "100" },			/* Beacon interval */
 	{ "wl_dtim", "1" },			/* DTIM period */
-	{ "wl_rts", "2347" },			/* RTS threshold */
-	{ "wl_frag", "2346" },			/* Fragmentation threshold */
+	{ "wl_rts", DEF_WLAN_RTS },			/* RTS threshold */
+	{ "wl_frag", DEF_WLAN_MSS },			/* Fragmentation threshold */
 	{ "wl_ap_isolate", "0" },		/* AP isolate mode */
 	{ "wl_closed", "0" },			/* Closed (hidden) network */
 	{ "wl_macmode", "disabled" },		/* "allow" only, "deny" only, or "disabled"(allow all) */
@@ -276,8 +276,8 @@ struct nvram_pair router_defaults[] = {
 	{ "rt_bcn", "100" },
 	{ "rt_dtim", "1" },
 	{ "rt_gmode_protection", "auto" },
-	{ "rt_rts", "2347" },
-	{ "rt_frag", "2346" },
+	{ "rt_rts", DEF_WLAN_RTS },
+	{ "rt_frag", DEF_WLAN_MSS },
 	{ "rt_ap_isolate", "0" },
 	{ "rt_closed", "0" },
 	{ "rt_macmode", "disabled" },
@@ -367,10 +367,14 @@ struct nvram_pair router_defaults[] = {
 #endif
 
 	// USB related
+	{ "samba_r_size", DEF_WLAN_MSS },
+	{ "samba_m_xmit", "65535" },
+	{ "samba_rmem_buf", "65535" },
+	{ "samba_wmem_buf", "65535" },
 	{ "acc_num", "0" },
 	{ "enable_ftp", "0" },
 	{ "enable_samba", "0" },
-	{ "st_samba_fp", "0" },
+	{ "st_samba_fp", "1" },
 	{ "st_samba_mode", "1" },
 	{ "st_samba_lmb", "1" },
 	{ "st_samba_workgroup", DEF_SMB_WORKGROUP },
@@ -384,7 +388,6 @@ struct nvram_pair router_defaults[] = {
 	{ "apps_itunes", "0"},
 	{ "sh_num", "0" },
 	{ "computer_name", BOARD_NAME },
-	{ "pcache_reclaim", "2" },
 	{ "usb3_disable", "0" },
 	{ "u2ec_enable", "1" },
 	{ "lprd_enable", "1" },
@@ -542,42 +545,31 @@ struct nvram_pair router_defaults[] = {
 	{ "vlmcsd_enable", "0" },
 #endif
 
-#if defined(APP_DNSFORWARDER)
-	/* dns-forwarder */
-	{ "dns_forwarder_enable", "0" },
-	{ "dns_forwarder_port", "5353" },
-	{ "dns_forwarder_bind", "0.0.0.0" },
-	{ "dns_forwarder_server", "8.8.4.4:53" },
-#endif
-
 #if defined(APP_SHADOWSOCKS)
 	/* shadowsocks */
-	{ "ss_type", "0" }, //0=ss, 1=ssr
 	{ "ss_enable", "0" },
-	{ "ss_mode", "1" }, 	//0=全局代理,1=绕过大陆,2=gfwlist
-	{ "ss_server", "127.0.0.1" },
-	{ "ss_server_port", "8989" },
-	{ "ss_key", "Secret" },
-	{ "ss_method", "rc4-md5" },
-	{ "ss_udp", "0" },
+	{ "ss_type", "9" }, 	//0=ss 1=ssr 2=trojan 3=vmess 4=naive 8=custom 9=auto
+	{ "ss_mode", "1" }, 	//0=global 1=chnroute 21=gfwlist(diversion rate: Keen) 22=gfwlist(diversion rate: True)
+	{ "ss_socks", "1" },
 	{ "ss_local_port", "1080" },
 	{ "ss_mtu", "1492" },
-	{ "ss_router_proxy", "1" },
-	{ "ss_lower_port_only", "1" },		//1:22-1023;2:53,80,443
-	{ "ss_timeout", "60"},
-	{ "ss_protocol", "origin"},
-	{ "ss_proto_param", ""},
-	{ "ss_obfs", "plain"},
-	{ "ss_obfs_param", ""},
 
-	{ "ss-tunnel_enable", "0" },
-	{ "ss-tunnel_local_port", "5301" },
-	{ "ss-tunnel_remote", "8.8.4.4:53" },
-	{ "ss-tunnel_mtu", "1492" },
-
-	{ "ss_watchcat", "1" },
+	{ "ss_watchcat_autorec", "0" },
 	{ "ss_update_chnroute", "0" },
+	{ "chnroute_url", "" },
+	{ "ss_custom_chnroute", "" },
 	{ "ss_update_gfwlist", "0" },
+	{ "gfwlist_url", "" },
+	{ "ss_custom_gfwlist", "" },
+	{ "ss_update_chnlist", "0" },
+	{ "chnlist_url", "" },
+	{ "ss_custom_chnlist", "" },
+
+	{ "ss_dns_local_port", "60" },
+	{ "ss_dns_remote_server", "8.8.4.4:53" },
+	{ "dns_forwarder_enable", "0" },
+
+	{ "ss_server_num_x", "0" },
 #endif
 
 	/* DHCP server parameters */
@@ -667,24 +659,19 @@ struct nvram_pair router_defaults[] = {
 	{ "controlrate_broadcast", "10" },
 
 	{ "di_poll_mode", "0" },
+	{ "di_notify_mode", "0" },
 	{ "di_timeout", "2" },
-	{ "di_time_done", "30" },
-	{ "di_time_fail", "5" },
-	{ "di_lost_delay", "1" },
+	{ "di_time_done", "300" },
+	{ "di_time_fail", "6" },
+	{ "di_found_delay", "0" },
+	{ "di_lost_delay", "0" },
 	{ "di_lost_action", "0" },
 	{ "di_recon_pause", "0" },
-	{ "di_addr0", "114.114.114.114" },
-	{ "di_addr1", "208.67.222.222" },
-	{ "di_addr2", "14.17.42.40" },
-	{ "di_addr3", "8.8.8.8" },
-	{ "di_addr4", "8.8.4.4" },
-	{ "di_addr5", "208.67.220.220" },
-	{ "di_port0", "53" },
-	{ "di_port1", "53" },
-	{ "di_port2", "80" },
-	{ "di_port3", "53" },
-	{ "di_port4", "53" },
-	{ "di_port5", "53" },
+	{ "di_domain_cn", "https://www.taobao.com/" },
+	{ "di_domain_gb", "https://www.google.com/" },
+	{ "di_user_agent", "Mozilla/5.0 (X11; Linux; rv:74.0) Gecko/20100101 Firefox/74.0" },
+	{ "di_status_code", "HTTP/1.1 200 OK" },
+	{ "di_page_feature", "<!DOCTYPE html>" },
 
 	{ "fw_pt_pppoe", "0" },
 
@@ -719,7 +706,7 @@ struct nvram_pair router_defaults[] = {
 	{ "fn2_action_short", "0" },
 	{ "fn2_action_long", "0" },
 	{ "front_led_all", "1" },
-	{ "front_led_wan", "2" },
+	{ "front_led_wan", "3" },
 	{ "front_led_lan", "2" },
 	{ "front_led_wif", "1" },
 	{ "front_led_usb", "1" },
@@ -770,13 +757,7 @@ struct nvram_pair router_defaults[] = {
 	{ "fw_mac_drop", "0" },
 	{ "nf_nat_type", "2" },
 	{ "nf_nat_loop", "1" },
-#if (BOARD_RAM_SIZE > 128)
-	{ "nf_max_conn", "32768" },
-#elif (BOARD_RAM_SIZE > 32)
 	{ "nf_max_conn", "16384" },
-#else
-	{ "nf_max_conn", "8192" },
-#endif
 	{ "nf_alg_ftp0", "21" },
 	{ "nf_alg_ftp1", "" },
 	{ "nf_alg_pptp", "0" },
@@ -902,6 +883,17 @@ struct nvram_pair tables_defaults[] = {
 
 	{ "wl_wdslist_x", "" },
 	{ "rt_wdslist_x", "" },
+
+	{ "ss_server_type_x", "" },
+	{ "ss_server_addr_x", "" },
+	{ "ss_server_port_x", "" },
+	{ "ss_server_key_x", "" },
+	{ "ss_server_sni_x", "" },
+	{ "ss_method_x", "" },
+	{ "ss_protocol_x", "" },
+	{ "ss_proto_param_x", "" },
+	{ "ss_obfs_x", "" },
+	{ "ss_obfs_param_x", "" },
 
 	{ 0, 0 }
 };

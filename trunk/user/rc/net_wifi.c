@@ -445,6 +445,22 @@ set_wifi_rssi_threshold(const char* ifname, int is_aband)
 		doSystem("iwpriv %s set %s=%d", ifname, "AssocReqRssiThres", assocrssi);
 }
 
+#if defined (STA_FORCE_ROAM)
+void
+set_wifi_force_roam(const char* ifname, int is_aband)
+{
+	const char *macmodeforceroam = nvram_wlan_get(is_aband, "macmode");
+
+	if (!strcmp(macmodeforceroam, "forceroam")) {
+		doSystem("iwpriv %s set %s=%d", ifname, "force_roam_enable", 1);
+		logmessage(LOGNAME, "[Force Roam] %s Force Roam start", ifname);
+	} else {
+		doSystem("iwpriv %s set %s=%d", ifname, "force_roam_enable", 0);
+		logmessage(LOGNAME, "[Force Roam] %s Force Roam stop", ifname);
+	}
+}
+#endif
+
 void 
 start_wifi_ap_wl(int radio_on)
 {
@@ -524,6 +540,9 @@ start_wifi_ap_rt(int radio_on)
 		br_add_del_if(IFNAME_BR, IFNAME_2G_MAIN, 1);
 		wif_control_m2u(0, IFNAME_2G_MAIN);
 		set_wifi_rssi_threshold(IFNAME_2G_MAIN, 0);
+#if defined (STA_FORCE_ROAM)
+		set_wifi_force_roam(IFNAME_2G_MAIN, 0);
+#endif
 		
 		if (is_guest_allowed_rt())
 		{
@@ -531,6 +550,9 @@ start_wifi_ap_rt(int radio_on)
 			br_add_del_if(IFNAME_BR, IFNAME_2G_GUEST, 1);
 			wif_control_m2u(0, IFNAME_2G_GUEST);
 			set_wifi_rssi_threshold(IFNAME_2G_GUEST, 0);
+#if defined (STA_FORCE_ROAM)
+			set_wifi_force_roam(IFNAME_2G_GUEST, 0);
+#endif
 		}
 	}
 #endif
@@ -640,13 +662,13 @@ start_wifi_apcli_wl(int radio_on)
 		if (nvram_wlan_get_int(1, "sta_auto"))
 #if defined (USE_WID_5G) && (USE_WID_5G==7615 || USE_WID_5G==7915)
 		{
-			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 3);
 			logmessage(LOGNAME, "Set ApCliAutoConnect to 3");
+			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 3);
 		}
 #else
 		{
-			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 1);
 			logmessage(LOGNAME, "Set ApCliAutoConnect to 1");
+			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 1);
 		}
 #endif
 	}
@@ -671,13 +693,18 @@ start_wifi_apcli_rt(int radio_on)
 		if (nvram_wlan_get_int(0, "sta_auto"))
 #if defined (USE_WID_2G) && (USE_WID_2G==7615 || USE_WID_2G==7915)
 		{
-			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 3);
 			logmessage(LOGNAME, "Set ApCliAutoConnect to 3");
+			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 3);
+		}
+#elif defined (USE_WID_2G) && (USE_WID_2G==7603)
+		{
+			logmessage(LOGNAME, "Set ApCliAutoConnect to 2");
+			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 2);
 		}
 #else
 		{
-			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 1);
 			logmessage(LOGNAME, "Set ApCliAutoConnect to 1");
+			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 1);
 		}
 #endif
 #endif
@@ -714,19 +741,22 @@ reconnect_apcli(const char *ifname_apcli, int force)
 	if (get_apcli_sta_auto(is_aband)) {
 		if (is_aband) {
 #if defined (USE_WID_5G) && (USB_WID_5G==7615 || USE_WID_5G==7915)
-			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 3);
 			logmessage(LOGNAME, "Set ApCliAutoConnect to 3");
+			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 3);
 #else
-			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 1);
 			logmessage(LOGNAME, "Set ApCliAutoConnect to 1");
+			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 1);
 #endif
 		} else {
 #if defined (USE_WID_2G) && (USB_WID_2G==7615 || USE_WID_2G==7915)
-			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 3);
 			logmessage(LOGNAME, "Set ApCliAutoConnect to 3");
+			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 3);
+#elif defined (USE_WID_2G) && (USE_WID_2G==7603)
+			logmessage(LOGNAME, "Set ApCliAutoConnect to 2");
+			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 2);
 #else
-			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 1);
 			logmessage(LOGNAME, "Set ApCliAutoConnect to 1");
+			doSystem("iwpriv %s set %s=%d", ifname_apcli, "ApCliAutoConnect", 1);
 #endif
 		}
 		
@@ -781,6 +811,7 @@ restart_wifi_wl(int radio_on, int need_reload_conf)
 		LED_CONTROL(LED_SW5G, LED_ON);
 	}
 		
+	restart_iappd();
 #endif
 }
 
@@ -826,6 +857,9 @@ restart_wifi_rt(int radio_on, int need_reload_conf)
 		update_vga_clamp_rt(0);
 		LED_CONTROL(LED_SW2G, LED_ON);
 	}
+#if BOARD_HAS_2G_RADIO
+	restart_iappd();
+#endif
 }
 
 int is_need_8021x(char *auth_mode)

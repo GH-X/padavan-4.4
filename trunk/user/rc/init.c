@@ -105,7 +105,7 @@ catch_sig_fatal(int sig)
 	sync();
 
 #ifdef MTD_FLASH_32M_REBOOT_BUG
-	system("/bin/mtd_write -r unlock mtd1");
+	system("/bin/mtd_write -r unlock Config");
 #else
 	reboot(RB_AUTOBOOT);
 #endif
@@ -423,7 +423,13 @@ init_sysctl(void)
 	set_interface_conf_int("ipv4", "all", "rp_filter", 0); // new logic for new kernels
 
 	fput_int("/proc/sys/vm/min_free_kbytes", KERNEL_MIN_FREE_KBYTES);
-	fput_int("/proc/sys/vm/overcommit_memory", 0);
+	fput_int("/proc/sys/vm/overcommit_memory", 1);
+	fput_int("/proc/sys/vm/oom_kill_allocating_task", 1);
+
+	fput_int("/proc/sys/net/core/somaxconn", KERNEL_NET_SOMAXCONN);
+	fput_int("/proc/sys/net/ipv4/tcp_max_syn_backlog", KERNEL_NET_SOMAXCONN);
+	fput_int("/proc/sys/net/ipv4/tcp_max_orphans", KERNEL_NET_TCP_MAXORPHANS);
+	fput_int("/proc/sys/net/ipv4/tcp_fin_timeout", KERNEL_NET_TCP_FINTIMEOUT);
 
 	set_tcp_tweaks();
 
@@ -444,8 +450,14 @@ init_main_loop(void)
 
 	/* Basic initialization */
 	init_time();
-#if BOARD_RAM_SIZE > 32
-	system("dev_init.sh");
+#if BOARD_RAM_SIZE > 256
+	system("dev_init.sh 512");
+#elif BOARD_RAM_SIZE > 128
+	system("dev_init.sh 256");
+#elif BOARD_RAM_SIZE > 64
+	system("dev_init.sh 128");
+#elif BOARD_RAM_SIZE > 32
+	system("dev_init.sh 64");
 #else
 	system("dev_init.sh -l");
 #endif
@@ -516,11 +528,14 @@ init_main_loop(void)
 int
 sys_exit(void)
 {
+	led_pwr_usrinverse();
 	return kill(1, SIGTERM);
 }
 
 int
 sys_stop(void)
 {
+	led_pwr_usrinverse();
 	return kill(1, SIGQUIT);
 }
+

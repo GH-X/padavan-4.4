@@ -7,32 +7,86 @@ SRC_SSR_NAME=shadowsocksr-libev-master
 ARCHIVE_SSR_NAME=shadowsocksr-libev-master-e2373d7
 #https://github.com/shadowsocksr-backup/shadowsocksr-libev.git
 
-GFWLIST_NAME=dnsmasq_gfwlist.conf
-GFWLIST_URL=https://cokebar.github.io/gfwlist2dnsmasq/$(GFWLIST_NAME)
+SRC_IPT_NAME=ipt2socks-1.1.3
+
+CACERT_NAME=cacert.pem
+CACERT_PURL=https://curl.se/ca
+CACERT_URL=$(CACERT_PURL)/$(CACERT_NAME)
+CACERT_DIR=cacerts
+
+CHNROUTE_DIR=chnroute
+CHNROUTE_URL=http://ftp.apnic.net/apnic/stats/apnic/delegated-apnic-latest
+
+CHNLIST_NAME=chnlist_domain.txt
+CHNLIST_URL=https://raw.githubusercontent.com/felixonmars/dnsmasq-china-list/master/accelerated-domains.china.conf
+CHNLIST_DIR=chnlist
+
+GFWLIST_NAME=gfwlist_domain.txt
+GFWLIST_PURL=https://cokebar.github.io/gfwlist2dnsmasq
+GFWLIST_URL=$(GFWLIST_PURL)/$(GFWLIST_NAME)
 GFWLIST_DIR=gfwlist
 
-all: gfwlist_dl extract_test config_test
+all: cacert_dl chnroute_dl chnlist_dl gfwlist_dl extract_test config_test
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_SSR_NAME)
+	$(MAKE) -j$(HOST_NCPU) -C $(SRC_IPT_NAME) CC="$(CC)"
 endif
 	$(MAKE) -j$(HOST_NCPU) -C $(SRC_SS_NAME)
 
+cacert_dl:
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
+	( if [ ! -d $(CACERT_DIR) ]; then \
+		mkdir -p $(CACERT_DIR) && cd $(CACERT_DIR) && \
+		wget -q -t5 --timeout=20 --no-check-certificate $(CACERT_URL) && \
+		tar jcf cacerts.bz2 $(CACERT_NAME); \
+	else \
+		cd $(CACERT_DIR) && tar jcf cacerts.bz2 $(CACERT_NAME); \
+	fi )
+endif
+
+chnroute_dl:
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
+	( if [ ! -d $(CHNROUTE_DIR) ];then \
+		mkdir -p $(CHNROUTE_DIR) && cd $(CHNROUTE_DIR) && \
+		wget -t8 -4 --timeout=8 -U Mozilla -O route.txt.tmp '$(CHNROUTE_URL)' && sed -i '/\*/d' route.txt.tmp && \
+		awk -F\| '/CN\|ipv4/ { printf("%s/%d\n", $$4, 32-log($$5)/log(2)) }' < route.txt.tmp > chnroute.txt && \
+		rm -f route.txt.tmp && tar jcf chnroute.bz2 chnroute.txt ; \
+	fi )
+endif
+
+chnlist_dl:
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
+	( if [ ! -d $(CHNLIST_DIR) ];then \
+		mkdir -p $(CHNLIST_DIR) && cd $(CHNLIST_DIR) && \
+		wget -t8 -4 --timeout=8 -O chnlist.txt.tmp --no-check-certificate '$(CHNLIST_URL)' && \
+		awk -F/ '{print $2}' < chnlist.txt.tmp > $(CHNLIST_NAME) && \
+		rm -f chnlist.txt.tmp && tar jcf chnlist.bz2 $(CHNLIST_NAME) ; \
+	else \
+		cd $(CHNLIST_DIR) && tar jcf chnlist.bz2 $(CHNLIST_NAME); \
+	fi )
+endif
+
 gfwlist_dl:
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
-	mkdir -p $(GFWLIST_DIR)
-	( if [ ! -f $(GFWLIST_DIR)/.finish ]; then \
-		cd $(GFWLIST_DIR) && rm -f * && \
+	( if [ ! -d $(GFWLIST_DIR) ]; then \
+		mkdir -p $(GFWLIST_DIR) && cd $(GFWLIST_DIR) && \
 		wget -q -t5 --timeout=20 --no-check-certificate $(GFWLIST_URL) && \
-		tar jcf gfwlist.bz2 $(GFWLIST_NAME) && \
-		touch .finish ; \
+		tar jcf gfwlist.bz2 $(GFWLIST_NAME); \
+	else \
+		cd $(GFWLIST_DIR) && tar jcf gfwlist.bz2 $(GFWLIST_NAME); \
 	fi )
 endif
 
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
-extract_test: extract_ssr_test extract_ss_test
+extract_test: extract_ipt_test extract_ssr_test extract_ss_test
 else
 extract_test: extract_ss_test
 endif
+
+extract_ipt_test:
+	( if [ ! -d $(SRC_IPT_NAME) ]; then \
+		tar zxf $(SRC_IPT_NAME).tar.gz ; \
+	fi )
 
 extract_ssr_test:
 	( if [ ! -d $(SRC_SSR_NAME) ]; then \
@@ -45,7 +99,7 @@ extract_ss_test:
 	fi )
 
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
-config_test: config_ssr config_ss
+config_test: config_ipt config_ssr config_ss
 else
 config_test: config_ss
 endif
@@ -63,6 +117,15 @@ config_ssr:
 	else \
 		make configure_ssr && touch ssr_config_done; \
 	fi )
+
+config_ipt:
+	( if [ -f ./config_done ]; then \
+		echo "the same configuration"; \
+	else \
+		make configure_ipt && touch ipt_config_done; \
+	fi )
+
+configure_ipt:
 
 configure_ssr:
 	( cd $(SRC_SSR_NAME) ; \
@@ -90,9 +153,14 @@ configure_ss:
 		--build=$(HOST_BUILD) ; \
 	)
 
-clean: clean_ssr clean_ss
-	rm -f ssr_config_done ss_config_done
-	rm -rf $(GFWLIST_DIR)
+clean: clean_ipt clean_ssr clean_ss
+	rm -f ssr_config_done ss_config_done ipt_config_done
+	rm -rf $(CHNROUTE_DIR)
+
+clean_ipt:
+	( if [ -f $(SRC_IPT_NAME)/Makefile ] ; then \
+		$(MAKE) -C $(SRC_IPT_NAME) clean ; \
+	fi )
 
 clean_ssr:
 	( if [ -f $(SRC_SSR_NAME)/Makefile ] ; then \
@@ -107,16 +175,35 @@ clean_ss:
 romfs:
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SHADOWSOCKS),y)
 	chmod -R +x scripts/
-	$(ROMFSINST) $(THISDIR)/scripts/ /usr/bin/
+	$(ROMFSINST) $(THISDIR)/scripts/shadowsocks.sh /usr/bin/shadowsocks.sh
+	$(ROMFSINST) $(THISDIR)/scripts/ss-rules /usr/bin/ss-rules
+	$(ROMFSINST) $(THISDIR)/scripts/ss-watchcat.sh /usr/bin/ss-watchcat.sh
+	$(ROMFSINST) $(THISDIR)/scripts/update_gfwlist.sh /usr/bin/update_gfwlist.sh
+	$(ROMFSINST) $(THISDIR)/scripts/update_chnlist.sh /usr/bin/update_chnlist.sh
+	$(ROMFSINST) $(THISDIR)/scripts/update_chnroute.sh /usr/bin/update_chnroute.sh
 	$(ROMFSINST) $(THISDIR)/gfwlist/gfwlist.bz2 /etc_ro/gfwlist.bz2
+	$(ROMFSINST) $(THISDIR)/chnlist/chnlist.bz2 /etc_ro/chnlist.bz2
+	$(ROMFSINST) $(THISDIR)/chnroute/chnroute.bz2 /etc_ro/chnroute.bz2
+	$(ROMFSINST) $(THISDIR)/cacerts/cacerts.bz2 /etc_ro/cacerts.bz2
+	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_IPT_NAME)/ipt2socks /usr/bin/ipt2socks
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SSR_NAME)/src/ss-redir /usr/bin/ssr-redir
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SSR_NAME)/src/ss-local /usr/bin/ssr-local
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SS_NAME)/src/ss-redir /usr/bin/ss-orig-redir
-	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SS_NAME)/src/ss-tunnel /usr/bin/ss-orig-tunnel
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SS_NAME)/src/ss-local /usr/bin/ss-orig-local
 	ln -sf /var/ss-redir $(ROMFSDIR)/usr/bin/ss-redir
-	ln -sf /var/ss-tunnel $(ROMFSDIR)/usr/bin/ss-local
+	ln -sf /var/ss-local $(ROMFSDIR)/usr/bin/ss-local
+	ln -sf /var/v2ray-plugin $(ROMFSDIR)/usr/bin/v2ray-plugin
 endif
 ifeq ($(CONFIG_FIRMWARE_INCLUDE_SSSERVER),y)
 	$(ROMFSINST) -p +x $(THISDIR)/$(SRC_SS_NAME)/src/ss-server /usr/bin/ss-server
 endif
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_SSV2RP),y)
+	$(ROMFSINST) -p +x $(THISDIR)/ss-v2ray-plugin /usr/bin/ss-v2ray-plugin
+endif
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_SSVMESS),y)
+	$(ROMFSINST) -p +x $(THISDIR)/v2ray /usr/bin/v2ray
+endif
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_SSNAIVE),y)
+	$(ROMFSINST) -p +x $(THISDIR)/naive /usr/bin/naive
+endif
+

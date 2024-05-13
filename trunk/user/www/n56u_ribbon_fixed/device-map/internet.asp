@@ -299,7 +299,7 @@ function submitInternet(v){
   <tr id="row_link_apcli" style="display:none">
     <th><#InetStateWISP#></th>
     <td colspan="2"><span id="WANAPCli"></span></td>
-    <td width="40px" style="text-align: right; padding: 6px 8px"><button type="button" class="btn btn-mini" style="height: 21px; outline:0;" title="<#Connect#>" onclick="submitInternet('WispReassoc');"><i class="icon icon-refresh"></i></button></td>
+    <td width="40px" style="text-align: right; padding: 6px 8px"><button type="button" class="btn btn-mini" style="height: 21px; outline:0;" title="<#Connect#>" onclick="submitInternet('WispReassoc');"><i class="icon icon-repeat"></i></button></td>
   </tr>
   <tr>
     <th><#ConnectionStatus#></th>

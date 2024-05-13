@@ -57,6 +57,9 @@ static int ntpc_server_idx = 0;
 static int ntpc_tries = 0;
 
 static int httpd_missing = 0;
+#if BOARD_HAS_2G_RADIO
+static int iappd_missing = 0;
+#endif
 static int dnsmasq_missing = 0;
 
 static struct itimerval wd_itv;
@@ -402,6 +405,25 @@ static void httpd_process_check(void)
 	}
 }
 
+/* Sometimes, ralinkiappd crashed, try to re-run it */
+#if BOARD_HAS_2G_RADIO
+static void iappd_process_check(void)
+{
+	int iappd_is_run = pids("ralinkiappd");
+
+	if (!iappd_is_run)
+		iappd_missing++;
+	else
+		iappd_missing = 0;
+	
+	if (iappd_missing > 1) {
+		iappd_missing = 0;
+		logmessage("watchdog", "ralinkiappd is missing, start again!");
+		start_iappd();
+	}
+}
+#endif
+
 /* Sometimes, dnsmasq crashed, try to re-run it */
 static void
 dnsmasq_process_check(void)
@@ -477,6 +499,10 @@ watchdog_on_timer(void)
 
 	/* http server check */
 	httpd_process_check();
+
+#if BOARD_HAS_2G_RADIO
+	iappd_process_check();
+#endif
 
 	/* DNS/DHCP server check */
 	if (!is_ap_mode)

@@ -1,14 +1,14 @@
-var winH,winW;
+var winH,winvisibleH,winW;
 
 <% get_flash_time(); %>
 
 function winW_H(){
-	if(parseInt(navigator.appVersion) > 3){
-		winW = document.documentElement.scrollWidth;
-		if(document.documentElement.clientHeight > document.documentElement.scrollHeight)
-			winH = document.documentElement.clientHeight;
-		else
-			winH = document.documentElement.scrollHeight;
+	winW = document.documentElement.scrollWidth;
+	winvisibleH = document.documentElement.clientHeight;
+	if(document.documentElement.clientHeight > document.documentElement.scrollHeight){
+		winH = document.documentElement.clientHeight;
+	}else{
+		winH = document.documentElement.scrollHeight;
 	}
 }
 
@@ -65,13 +65,10 @@ function showLoading(seconds, flag){
 	htmlbodyforIE[0].style.overflow = "hidden";
 
 	winW_H();
+
 	var blockmarginTop;
-	var sheight = document.documentElement.scrollHeight;
-	var cheight = document.documentElement.clientHeight
+	blockmarginTop = ~~(winvisibleH*0.38);
 
-	blockmarginTop = (navigator.userAgent.indexOf("Safari")>=0)?(sheight-cheight<=0)?200:sheight-cheight+200:document.documentElement.scrollTop+200;
-
-	//Lock modified it for Safari4 display issue.
 	$("loadingBlock").style.marginTop = blockmarginTop+"px";
 	$("Loading").style.width = winW+"px";
 	$("Loading").style.height = winH+"px";

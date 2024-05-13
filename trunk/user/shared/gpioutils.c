@@ -8,6 +8,8 @@ const char* led_to_name(int led)
 	{
 		case LED_PWR:
 			return "power";
+		case LED_PWR2:
+			return "power_2";
 		case LED_WIFI:
 			return "wifi";
 		case LED_SW2G:
@@ -16,6 +18,8 @@ const char* led_to_name(int led)
 			return "sw5g";
 		case LED_WAN:
 			return "wan";
+		case LED_WAN2:
+			return "wan_2";
 		case LED_LAN:
 			return "lan";
 		case LED_USB:
@@ -49,6 +53,8 @@ search_gpio_led(void)
 			if (dirp->d_type == DT_DIR) {
 				if (!strcmp(dirp->d_name, "power")) {
 					leds |= LED_PWR;
+				} else if (!strcmp(dirp->d_name, "power_2")) {
+					leds |= LED_PWR2;
 				} else if (!strcmp(dirp->d_name, "wifi")) {
 					leds |= LED_WIFI;
 				} else if (!strcmp(dirp->d_name, "sw2g")) {
@@ -57,6 +63,8 @@ search_gpio_led(void)
 					leds |= LED_SW5G;
 				} else if (!strcmp(dirp->d_name, "wan")) {
 					leds |= LED_WAN;
+				} else if (!strcmp(dirp->d_name, "wan_2")) {
+					leds |= LED_WAN2;
 				} else if (!strcmp(dirp->d_name, "lan")) {
 					leds |= LED_LAN;
 				} else if (!strcmp(dirp->d_name, "usb")) {

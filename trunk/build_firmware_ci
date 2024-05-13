@@ -2,7 +2,7 @@
 echo "======================= BUILD_CI $1 ======================="
 
 [ -d images ] && rm -f ./images/*.trx
-./build_firmware_modify $1 > build.log 2>&1 &
+./build_firmware_modify $1 1>build.log 2>error.log &
 
 while true ;do
 	sleep 10
@@ -12,9 +12,9 @@ while true ;do
 	if [ -z "$process_status" ] ;then
 		echo "Build script is exited"
 		if [ -f ./images/*.trx ]; then
-			tail -20 build.log && exit 0
+			cat error.log && tail -20 build.log && exit 0
 		else
-			tail -60 build.log && exit 1
+			cat error.log && exit 1
 		fi
 	else
 		echo "$(tail -2 build.log)"

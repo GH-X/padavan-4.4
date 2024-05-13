@@ -201,10 +201,26 @@ ez_action_wan_toggle(void)
 }
 
 static void
+ez_action_reboot(void)
+{
+	logmessage("gpio_btn", "Perform ez-button %s...", "reboot");
+
+	write_storage_to_mtd();
+#if defined (USE_STORAGE)
+	safe_remove_all_stor_devices(1);
+#endif
+	sys_exit();
+}
+
+static void
 ez_action_shutdown(void)
 {
 	logmessage("gpio_btn", "Perform ez-button %s...", "shutdown");
 
+	write_storage_to_mtd();
+#if defined (USE_STORAGE)
+	safe_remove_all_stor_devices(1);
+#endif
 	sys_stop();
 }
 
@@ -221,12 +237,20 @@ ez_action_user_script(int script_param)
 	doSystem("%s %d", ez_script, script_param);
 }
 
-static void
+void
 ez_action_led_toggle(void)
 {
 	int is_show = (nvram_get_int("led_front_t")) ? 0 : 1;
 
 	show_hide_front_leds(is_show);
+}
+
+void
+btn_reset_action(void)
+{
+	erase_nvram();
+	erase_storage();
+	sys_exit();
 }
 
 void
@@ -245,15 +269,6 @@ btn_event_short(int btn_id)
 		ez_action = nvram_get_int("ez_action_short");
 	} else {
 		return;
-	}
-
-	if (LED_PWR & search_gpio_led())
-	{
-		gpio_led_set(LED_PWR, get_state_led_pwr());
-		if (ez_action != 10) {
-			usleep(90000);
-			LED_CONTROL(LED_PWR, LED_ON);
-		}
 	}
 
 	switch (ez_action)
@@ -300,6 +315,9 @@ btn_event_short(int btn_id)
 		ez_action_change_guest_wifi2();
 		ez_action_change_guest_wifi5();
 		break;
+	case 14: // Router reboot
+		ez_action_reboot();
+		break;
 #if (BOARD_NUM_USB_PORTS > 1)
 	case 21: // Safe removal USB #1
 		ez_action_usb_saferemoval(1);
@@ -327,14 +345,6 @@ btn_event_long(int btn_id)
 		ez_action = nvram_get_int("ez_action_long");
 	}
 
-	if (LED_PWR & search_gpio_led())
-	{
-		if (ez_action == 7 || ez_action == 8)
-			LED_CONTROL(LED_PWR, LED_OFF);
-		else if (ez_action != 11)
-			LED_CONTROL(LED_PWR, LED_ON);
-	}
-
 	switch (ez_action)
 	{
 	case 1: // WiFi 2.4GHz force Enable/Disable trigger
@@ -357,7 +367,7 @@ btn_event_long(int btn_id)
 		ez_action_wan_reconnect();
 		break;
 	case 7: // Router reboot
-		sys_exit();
+		ez_action_reboot();
 		break;
 	case 8: // Router shutdown
 		ez_action_shutdown();
@@ -382,9 +392,7 @@ btn_event_long(int btn_id)
 		ez_action_change_guest_wifi5();
 		break;
 	case 15: // Reset settings
-		erase_nvram();
-		erase_storage();
-		sys_exit();
+		btn_reset_action();
 		break;
 #if (BOARD_NUM_USB_PORTS > 1)
 	case 21: // Safe removal USB #1
@@ -397,10 +405,3 @@ btn_event_long(int btn_id)
 	}
 }
 
-void
-btn_reset_action(void)
-{
-	erase_nvram();
-	erase_storage();
-	sys_exit();
-}

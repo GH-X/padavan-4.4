@@ -44,26 +44,28 @@ function applyRule(){
 }
 
 function validForm(){
-	var i;
-	var obj;
-	for (i=0;i<6;i++) {
-		obj=document.getElementsByName("di_addr"+i)[0];
-		if(!validate_ipaddr_final(obj, ''))
-			return false;
-		obj=document.getElementsByName("di_port"+i)[0];
-		if(obj.value.length > 0 && !validate_range(obj, 1, 65535))
-			return false;
-	}
-
-	if(!validate_range(document.form.di_time_done, 15, 600))
+	if(document.form.di_domain_cn.value == "")
 		return false;
-	if(!validate_range(document.form.di_time_fail, 3, 120))
+	if(document.form.di_domain_gb.value == "")
 		return false;
-	if(!validate_range(document.form.di_timeout, 1, 10))
+	if(document.form.di_user_agent.value == "")
+		return false;
+	if(document.form.di_status_code.value == "")
+		return false;
+	if(document.form.di_page_feature.value == "")
+		return false;
+	if(!validate_range(document.form.di_timeout, 1, 8))
 		return false;
 
-	if (document.form.di_poll_mode.value == "1"){
-		if(!validate_range(document.form.di_lost_delay, 0, 600))
+	if (document.form.di_poll_mode.value == "0"){
+		var v = document.form.di_timeout.value * 3;
+		if(!validate_range(document.form.di_time_done, 60, 600))
+			return false;
+		if(!validate_range(document.form.di_time_fail, v, 60))
+			return false;
+		if(!validate_range(document.form.di_found_delay, 0, 3600))
+			return false;
+		if(!validate_range(document.form.di_lost_delay, 0, 3600))
 			return false;
 		
 		if (document.form.di_lost_action.value == "2" && !get_ap_mode()){
@@ -76,10 +78,11 @@ function validForm(){
 }
 
 function poll_mode_changed(){
-	var v = (document.form.di_poll_mode.value == "1") ? 1 : 0;
+	var v = (document.form.di_poll_mode.value == "0") ? 1 : 0;
 	if (v)
 		lost_action_changed();
 	showhide_div('tbl_di_events', v);
+	showhide_div('row_check_period', v);
 }
 
 function lost_action_changed(){
@@ -146,7 +149,7 @@ function done_validating(action){
                                         <tr>
                                             <th width="50%"><#InetCheckMode#></th>
                                             <td>
-                                                <select name="di_poll_mode" class="input" onchange="poll_mode_changed();">
+                                                <select name="di_poll_mode" class="input" style="width: 324px;" onchange="poll_mode_changed();">
                                                     <option value="0" <% nvram_match_x("", "di_poll_mode", "0", "selected"); %>><#InetCheckModeItem0#> (*)</option>
                                                     <option value="1" <% nvram_match_x("", "di_poll_mode", "1", "selected"); %>><#InetCheckModeItem1#></option>
                                                 </select>
@@ -159,66 +162,52 @@ function done_validating(action){
                                             <th colspan="2" style="background-color: #E3E3E3;"><#InetCheckHosts#></th>
                                         </tr>
                                         <tr>
-                                            <th width="50%"><#InetCheckHostIP4#> 1:</th>
+                                            <th width="50%"><#InetCheckHostDomain#>&nbsp;(<#InternetNation#>):</th>
                                             <td>
-                                                <input type="text" maxlength="15" class="input" size="15" name="di_addr0" style="width: 145px" value="<% nvram_get_x("","di_addr0"); %>" onkeypress="return is_ipaddr(this,event);"/>&nbsp;:
-                                                <input type="text" maxlength="5" class="input" size="10" name="di_port0" style="width: 44px;"  value="<% nvram_get_x("","di_port0"); %>" onkeypress="return is_number(this,event);"/>
+                                                <input type="text" maxlength="43" class="input" size="15" name="di_domain_cn" style="width: 314px" placeholder="https://www.taobao.com/" value="<% nvram_get_x("","di_domain_cn"); %>"/>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><#InetCheckHostIP4#> 2:</th>
+                                            <th><#InetCheckHostDomain#>&nbsp;(<#InternetGlobal#>):</th>
                                             <td>
-                                                <input type="text" maxlength="15" class="input" size="15" name="di_addr1" style="width: 145px" value="<% nvram_get_x("","di_addr1"); %>" onkeypress="return is_ipaddr(this,event);"/>&nbsp;:
-                                                <input type="text" maxlength="5" class="input" size="10" name="di_port1" style="width: 44px;"  value="<% nvram_get_x("","di_port1"); %>" onkeypress="return is_number(this,event);"/>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th><#InetCheckHostIP4#> 3:</th>
-                                            <td>
-                                                <input type="text" maxlength="15" class="input" size="15" name="di_addr2" style="width: 145px" value="<% nvram_get_x("","di_addr2"); %>" onkeypress="return is_ipaddr(this,event);"/>&nbsp;:
-                                                <input type="text" maxlength="5" class="input" size="10" name="di_port2" style="width: 44px;"  value="<% nvram_get_x("","di_port2"); %>" onkeypress="return is_number(this,event);"/>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th><#InetCheckHostIP4#> 4:</th>
-                                            <td>
-                                                <input type="text" maxlength="15" class="input" size="15" name="di_addr3" style="width: 145px" value="<% nvram_get_x("","di_addr3"); %>" onkeypress="return is_ipaddr(this,event);"/>&nbsp;:
-                                                <input type="text" maxlength="5" class="input" size="10" name="di_port3" style="width: 44px;"  value="<% nvram_get_x("","di_port3"); %>" onkeypress="return is_number(this,event);"/>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th><#InetCheckHostIP4#> 5:</th>
-                                            <td>
-                                                <input type="text" maxlength="15" class="input" size="15" name="di_addr4" style="width: 145px" value="<% nvram_get_x("","di_addr4"); %>" onkeypress="return is_ipaddr(this,event);"/>&nbsp;:
-                                                <input type="text" maxlength="5" class="input" size="10" name="di_port4" style="width: 44px;"  value="<% nvram_get_x("","di_port4"); %>" onkeypress="return is_number(this,event);"/>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th><#InetCheckHostIP4#> 6:</th>
-                                            <td>
-                                                <input type="text" maxlength="15" class="input" size="15" name="di_addr5" style="width: 145px" value="<% nvram_get_x("","di_addr5"); %>" onkeypress="return is_ipaddr(this,event);"/>&nbsp;:
-                                                <input type="text" maxlength="5" class="input" size="10" name="di_port5" style="width: 44px;"  value="<% nvram_get_x("","di_port5"); %>" onkeypress="return is_number(this,event);"/>
+                                                <input type="text" maxlength="43" class="input" size="15" name="di_domain_gb" style="width: 314px" placeholder="https://www.google.com/" value="<% nvram_get_x("","di_domain_gb"); %>"/>
                                             </td>
                                         </tr>
                                     </table>
 
                                     <table width="100%" cellpadding="4" cellspacing="0" class="table">
                                         <tr>
-                                            <th colspan="2" style="background-color: #E3E3E3;"><#InetCheckPoll#></th>
+                                            <th colspan="2" style="background-color: #E3E3E3;"><#InetCheckPoll#>
+                                                <a href="javascript:spoiler_toggle('spoiler_user_agent')"><#InetCheckUserAgent#></a>
+                                                <a href="javascript:spoiler_toggle('spoiler_return_code')"><#InetCheckStatusCode#>&nbsp;<#InetCheckPageFeature#></a>
+                                            </th>
                                         </tr>
-                                        <tr>
-                                            <th width="50%"><#InetCheckPeriod#></th>
+                                        <tr id="spoiler_user_agent" style="display:none;">
+                                            <td colspan="2" style="text-align: center;">
+                                                <input type="text" maxlength="90" class="input" size="15" name="di_user_agent" style="width: 656px" placeholder="Mozilla/5.0 (X11; Linux; rv:74.0) Gecko/20100101 Firefox/74.0" value="<% nvram_get_x("","di_user_agent"); %>"/>
+                                            </td>
+                                        </tr>
+                                        <tr id="spoiler_return_code" style="display:none;">
+                                            <td width="50%">
+                                                <input type="text" maxlength="43" class="input" size="15" name="di_status_code" style="width: 314px;" placeholder="HTTP/1.1 200 OK" value="<% nvram_get_x("", "di_status_code"); %>"/>
+                                            </td>
                                             <td>
-                                                <input type="text" maxlength="3" class="input" size="15" style="width: 94px;" name="di_time_done" value="<% nvram_get_x("", "di_time_done"); %>" onkeypress="return is_number(this,event);"/>&nbsp;/
-                                                <input type="text" maxlength="3" class="input" size="15" style="width: 94px;" name="di_time_fail" value="<% nvram_get_x("", "di_time_fail"); %>" onkeypress="return is_number(this,event);"/>
-                                                &nbsp;<span style="color:#888;">[ 55 / 5 ]</span>
+                                                <input type="text" maxlength="43" class="input" size="15" name="di_page_feature" style="width: 314px;" placeholder="<!DOCTYPE html>" value="<% nvram_get_x("", "di_page_feature"); %>"/>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <th><#InetCheckTimeout#></th>
+                                            <th width="50%"><#InetCheckTimeout#></th>
                                             <td>
-                                                <input type="text" maxlength="2" class="input" size="15" name="di_timeout" value="<% nvram_get_x("", "di_timeout"); %>" onkeypress="return is_number(this,event);"/>
-                                                &nbsp;<span style="color:#888;">[1..10]</span>
+                                                <input type="text" maxlength="1" class="input" size="15" name="di_timeout" placeholder="2" value="<% nvram_get_x("", "di_timeout"); %>" onkeypress="return is_number(this,event);"/>
+                                                &nbsp;<span style="color:#888;">[1..8]</span>
+                                            </td>
+                                        </tr>
+                                        <tr id="row_check_period">
+                                            <th><#InetCheckPeriod#></th>
+                                            <td>
+                                                <input type="text" maxlength="3" class="input" size="15" style="width: 94px;" name="di_time_done" placeholder="300" value="<% nvram_get_x("", "di_time_done"); %>" onkeypress="return is_number(this,event);"/>&nbsp;/
+                                                <input type="text" maxlength="2" class="input" size="15" style="width: 94px;" name="di_time_fail" placeholder="6" value="<% nvram_get_x("", "di_time_fail"); %>" onkeypress="return is_number(this,event);"/>
+                                                &nbsp;<span style="color:#888;">[60..600/6..60]</span>
                                             </td>
                                         </tr>
                                     </table>
@@ -228,16 +217,17 @@ function done_validating(action){
                                             <th colspan="2" style="background-color: #E3E3E3;"><#InetCheckEvents#></th>
                                         </tr>
                                         <tr>
-                                            <th width="50%"><#InetCheckLostDelay#></th>
+                                            <th width="50%"><#InetCheckFoundLost#></th>
                                             <td>
-                                                <input type="text" maxlength="3" class="input" size="15" name="di_lost_delay" value="<% nvram_get_x("", "di_lost_delay"); %>" onkeypress="return is_number(this,event);"/>
-                                                &nbsp;<span style="color:#888;">[0..600]</span>
+                                                <input type="text" maxlength="1" class="input" size="15" style="width: 94px;" name="di_found_delay" placeholder="1" value="<% nvram_get_x("", "di_found_delay"); %>" onkeypress="return is_number(this,event);"/>&nbsp;/
+                                                <input type="text" maxlength="2" class="input" size="15" style="width: 94px;" name="di_lost_delay" placeholder="10" value="<% nvram_get_x("", "di_lost_delay"); %>" onkeypress="return is_number(this,event);"/>
+                                                &nbsp;<span style="color:#888;">[0..3600]</span>
                                             </td>
                                         </tr>
                                         <tr id="row_lost_action">
                                             <th><#InetCheckLostAction#></th>
                                             <td>
-                                                <select name="di_lost_action" class="input" style="width: 320px;" onchange="lost_action_changed();">
+                                                <select name="di_lost_action" class="input" style="width: 324px;" onchange="lost_action_changed();">
                                                     <option value="0" <% nvram_match_x("", "di_lost_action", "0", "selected"); %>><#InetCheckLostItem0#></option>
                                                     <option value="1" <% nvram_match_x("", "di_lost_action", "1", "selected"); %>><#InetCheckLostItem1#></option>
                                                     <option value="2" <% nvram_match_x("", "di_lost_action", "2", "selected"); %>><#InetCheckLostItem2#></option>
@@ -248,15 +238,23 @@ function done_validating(action){
                                         <tr id="row_recon_pause" style="display:none;">
                                             <th><#InetCheckReconPause#></th>
                                             <td>
-                                                <input type="text" maxlength="3" class="input" size="15" name="di_recon_pause" value="<% nvram_get_x("", "di_recon_pause"); %>" onkeypress="return is_number(this,event);"/>
+                                                <input type="text" maxlength="3" class="input" size="15" name="di_recon_pause" placeholder="0" value="<% nvram_get_x("", "di_recon_pause"); %>" onkeypress="return is_number(this,event);"/>
                                                 &nbsp;<span style="color:#888;">[0..600]</span>
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td colspan="2" style="padding-bottom: 0px;">
-                                                <a href="javascript:spoiler_toggle('script3')"><span><#RunInetState#></span></a>
-                                                <div id="script3" style="display:none;">
-                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.inet_state_script.sh" style="font-family:'Courier New'; font-size:12px;"><% nvram_dump("scripts.inet_state_script.sh",""); %></textarea>
+                                            <th><a href="javascript:spoiler_toggle('inet_state_script')"><span><#RunInetState#></span></a></th>
+                                            <td>
+                                                <select name="di_notify_mode" class="input" style="width: 324px;">
+                                                    <option value="0" <% nvram_match_x("", "di_notify_mode", "0", "selected"); %>><#InetCheckNotifyItem0#> (*)</option>
+                                                    <option value="1" <% nvram_match_x("", "di_notify_mode", "1", "selected"); %>><#InetCheckNotifyItem1#></option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr id="inet_state_script" style="display:none;">
+                                            <td colspan="2" style="padding-bottom: 0px; border-top: 0 none;">
+                                                <div>
+                                                    <textarea rows="16" wrap="off" spellcheck="false" maxlength="8192" class="span12" name="scripts.inet_state_script.sh" style="resize:none; font-family:'Courier New', Courier, mono; font-size:12px;"><% nvram_dump("scripts.inet_state_script.sh",""); %></textarea>
                                                 </div>
                                             </td>
                                         </tr>

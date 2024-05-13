@@ -277,6 +277,7 @@ function change_led_all(){
                                                     <option value="6" ><#TweaksWPSItem20#></option>
                                                     <option value="7" ><#TweaksWPSItem21#></option>
                                                     <option value="8" ><#TweaksWPSItem22#></option>
+                                                    <option value="14"><#TweaksWPSItem30#></option>
                                                     <option value="9" ><#TweaksWPSItem32#> (arg: 1)</option>
                                                 </select>
                                             </td>
@@ -331,6 +332,7 @@ function change_led_all(){
                                                     <option value="6" ><#TweaksWPSItem20#></option>
                                                     <option value="7" ><#TweaksWPSItem21#></option>
                                                     <option value="8" ><#TweaksWPSItem22#></option>
+                                                    <option value="14"><#TweaksWPSItem30#></option>
                                                     <option value="9" ><#TweaksWPSItem32#> (arg: 3)</option>
                                                 </select>
                                             </td>
@@ -385,6 +387,7 @@ function change_led_all(){
                                                     <option value="6" ><#TweaksWPSItem20#></option>
                                                     <option value="7" ><#TweaksWPSItem21#></option>
                                                     <option value="8" ><#TweaksWPSItem22#></option>
+                                                    <option value="14"><#TweaksWPSItem30#></option>
                                                     <option value="9" ><#TweaksWPSItem32#> (arg: 5)</option>
                                                 </select>
                                             </td>
@@ -442,8 +445,8 @@ function change_led_all(){
                                                 <select name="front_led_wan" class="input" style="width: 320px;">
                                                     <option value="0" <% nvram_match_x("", "front_led_wan", "0","selected"); %>><#btn_Disable#></option>
                                                     <option value="1" <% nvram_match_x("", "front_led_wan", "1","selected"); %>><#TweaksLEDItem00#></option>
-                                                    <option value="2" <% nvram_match_x("", "front_led_wan", "2","selected"); %>><#TweaksLEDItem03#> (*)</option>
-                                                    <option value="3" <% nvram_match_x("", "front_led_wan", "3","selected"); %>><#TweaksLEDItem04#></option>
+                                                    <option value="2" <% nvram_match_x("", "front_led_wan", "2","selected"); %>><#TweaksLEDItem03#></option>
+                                                    <option value="3" <% nvram_match_x("", "front_led_wan", "3","selected"); %>><#TweaksLEDItem04#> (*)</option>
                                                 </select>
                                             </td>
                                         </tr>

@@ -270,7 +270,7 @@ write_smb_conf(void)
 	fprintf(fp, "dos filetimes = yes\n");
 	fprintf(fp, "dos filetime resolution = yes\n");
 	fprintf(fp, "access based share enum = yes\n");
-	fprintf(fp, "veto files = /Thumbs.db/.DS_Store/._*/.apdisk/.TemporaryItems/");
+	fprintf(fp, "veto files = /Thumbs.db/.DS_Store/._*/.apdisk/.TemporaryItems\n");
 	fprintf(fp, "delete veto files = yes\n");
 	fprintf(fp, "\n");
 

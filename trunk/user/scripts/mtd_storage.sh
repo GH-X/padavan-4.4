@@ -196,7 +196,9 @@ func_fill()
 	dir_crond="$dir_storage/cron/crontabs"
 	dir_wlan="$dir_storage/wlan"
 	dir_chnroute="$dir_storage/chinadns"
+	dir_chnlist="$dir_storage/chnlist"
 	dir_gfwlist="$dir_storage/gfwlist"
+	dir_cacerts="$dir_storage/cacerts"
 
 	script_start="$dir_storage/start_script.sh"
 	script_started="$dir_storage/started_script.sh"
@@ -204,9 +206,15 @@ func_fill()
 	script_postf="$dir_storage/post_iptables_script.sh"
 	script_postw="$dir_storage/post_wan_script.sh"
 	script_inets="$dir_storage/inet_state_script.sh"
+	script_ineta="$dir_storage/detectinternet_1.sh"
+	script_inetb="$dir_storage/detectinternet_2.sh"
+	script_inetc="$dir_storage/detectinternet_3.sh"
+	script_inetd="$dir_storage/detectinternet_4.sh"
 	script_vpnsc="$dir_storage/vpns_client_script.sh"
 	script_vpncs="$dir_storage/vpnc_server_script.sh"
 	script_ezbtn="$dir_storage/ez_buttons_script.sh"
+
+	sspcustomconf="$dir_storage/ssp_custom.conf"
 
 	user_hosts="$dir_dnsmasq/hosts"
 	user_dnsmasq_conf="$dir_dnsmasq/dnsmasq.conf"
@@ -217,9 +225,11 @@ func_fill()
 	user_sswan_conf="$dir_sswan/strongswan.conf"
 	user_sswan_ipsec_conf="$dir_sswan/ipsec.conf"
 	user_sswan_secrets="$dir_sswan/ipsec.secrets"
-	
+
 	chnroute_file="/etc_ro/chnroute.bz2"
-	gfwlist_conf_file="/etc_ro/gfwlist.bz2"
+	chnlist_file="/etc_ro/chnlist.bz2"
+	gfwlist_file="/etc_ro/gfwlist.bz2"
+	cacerts_file="/etc_ro/cacerts.bz2"
 
 	# create crond dir
 	[ ! -d "$dir_crond" ] && mkdir -p -m 730 "$dir_crond"
@@ -234,10 +244,24 @@ func_fill()
 		fi
 	fi
 
+	# create chnlist
+	if [ ! -d "$dir_chnlist" ] ; then
+		if [ -f "$chnlist_file" ]; then
+			mkdir -p "$dir_chnlist" && tar jxf "$chnlist_file" -C "$dir_chnlist"
+		fi
+	fi
+
 	# create gfwlist
 	if [ ! -d "$dir_gfwlist" ] ; then
-		if [ -f "$gfwlist_conf_file" ]; then	
-			mkdir -p "$dir_gfwlist" && tar jxf "$gfwlist_conf_file" -C "$dir_gfwlist"
+		if [ -f "$gfwlist_file" ]; then
+			mkdir -p "$dir_gfwlist" && tar jxf "$gfwlist_file" -C "$dir_gfwlist"
+		fi
+	fi
+
+	# create cacerts
+	if [ ! -d "$dir_cacerts" ] ; then
+		if [ -f "$cacerts_file" ]; then
+			mkdir -p "$dir_cacerts" && tar jxf "$cacerts_file" -C "$dir_cacerts"
 		fi
 	fi
 
@@ -274,12 +298,15 @@ sync && echo 3 > /proc/sys/vm/drop_caches
 # Mount SATA disk
 #mdev -s
 
+EOF
+	if [ -f /usr/bin/wing ]; then
+		cat >> "$script_started" <<EOF
 #wing <HOST:443> <PASS>
 #wing 192.168.1.9:1080
 #ipset add gfwlist 8.8.4.4
 
-
 EOF
+	fi
 		chmod 755 "$script_started"
 	fi
 
@@ -305,9 +332,13 @@ EOF
 ### Custom user script
 ### Called after internal iptables reconfig (firewall update)
 
+EOF
+	if [ -f /usr/bin/wing ]; then
+		cat >> "$script_postf" <<EOF
 #wing resume
 
 EOF
+	fi
 		chmod 755 "$script_postf"
 	fi
 
@@ -332,14 +363,95 @@ EOF
 #!/bin/sh
 
 ### Custom user script
-### Called on Internet status changed
-### \$1 - Internet status (0/1)
-### \$2 - elapsed time (s) from previous state
+### Called on Internet state changed
+### \$1 - Internet status (Lost=0/Found=1 or Lost=0/Nation=1/Global=2)
+### \$2 - Previous status (Lost=0/Found=1 or Lost=0/Nation=1/Global=2) 3=Unknown
+### \$3 - State duration  (second)
 
-logger -t "di" "Internet state: \$1, elapsed time: \$2s."
+logger -st "Internet state changed" "\$2 -(\$3)> \$1"
 
 EOF
 		chmod 755 "$script_inets"
+	fi
+
+	# create inet-detectinternet_1 script
+	if [ ! -f "$script_ineta" ] ; then
+		cat > "$script_ineta" <<EOF
+#!/bin/sh
+
+### detect_internet_script
+set -b -e -o pipefail
+ulimit -t 1
+status_code=\$(nvram get di_status_code)
+user_agent=\$(nvram get di_user_agent)
+timeout=\$(nvram get di_timeout)
+domain=\$(nvram get di_domain_cn)
+
+curl "\$domain" -L -I -k -s --connect-timeout \$timeout --max-time \$timeout --speed-time \$timeout \\
+--speed-limit 1 -A "\$user_agent" | grep -q -s -i "\$status_code" || exit 1
+
+EOF
+		chmod 755 "$script_ineta"
+	fi
+
+	# create inet-detectinternet_2 script
+	if [ ! -f "$script_inetb" ] ; then
+		cat > "$script_inetb" <<EOF
+#!/bin/sh
+
+### detect_internet_script
+set -b -e -o pipefail
+ulimit -t 1
+status_code=\$(nvram get di_status_code)
+user_agent=\$(nvram get di_user_agent)
+timeout=\$(nvram get di_timeout)
+domain=\$(nvram get di_domain_gb)
+
+curl "\$domain" -L -I -k -s --connect-timeout \$timeout --max-time \$timeout --speed-time \$timeout \\
+--speed-limit 1 -A "\$user_agent" | grep -q -s -i "\$status_code" || exit 1
+
+EOF
+		chmod 755 "$script_inetb"
+	fi
+
+	# create inet-detectinternet_3 script
+	if [ ! -f "$script_inetc" ] ; then
+		cat > "$script_inetc" <<EOF
+#!/bin/sh
+
+### detect_internet_script
+set -b -e -o pipefail
+ulimit -t 1
+page_feature=\$(nvram get di_page_feature)
+user_agent=\$(nvram get di_user_agent)
+timeout=\$(nvram get di_timeout)
+domain=\$(nvram get di_domain_cn)
+
+curl "\$domain" -L -k -s --connect-timeout \$timeout --max-time \$timeout --speed-time \$timeout \\
+--speed-limit 1 -A "\$user_agent" | grep -q -s -i "\$page_feature" || exit 1
+
+EOF
+		chmod 755 "$script_inetc"
+	fi
+
+	# create inet-detectinternet_4 script
+	if [ ! -f "$script_inetd" ] ; then
+		cat > "$script_inetd" <<EOF
+#!/bin/sh
+
+### detect_internet_script
+set -b -e -o pipefail
+ulimit -t 1
+page_feature=\$(nvram get di_page_feature)
+user_agent=\$(nvram get di_user_agent)
+timeout=\$(nvram get di_timeout)
+domain=\$(nvram get di_domain_gb)
+
+curl "\$domain" -L -k -s --connect-timeout \$timeout --max-time \$timeout --speed-time \$timeout \\
+--speed-limit 1 -A "\$user_agent" | grep -q -s -i "\$page_feature" || exit 1
+
+EOF
+		chmod 755 "$script_inetd"
 	fi
 
 	# create vpn server action script
@@ -456,16 +568,53 @@ EOF
 		chmod 755 "$script_ezbtn"
 	fi
 
+	# create SSP Custom Conf
+	if [ ! -f "$sspcustomconf" ] ; then
+		cat > "$sspcustomconf" <<EOF
+### Binaries name
+sspbinname|trojan
+### Options argument
+confoptarg|-c \$conffile
+### Server addr
+serveraddr|example.com
+### Server port
+serverport|443
+### The complete configuration content of the node is written below
+{
+    "run_type": "client",
+    "local_addr": "0.0.0.0",
+    "local_port": 1080,
+    "remote_addr": "example.com",
+    "remote_port": 443,
+    "password": [
+        "password"
+    ],
+    "log_level": 2,
+    "ssl": {
+        "verify": true,
+        "verify_hostname": true,
+        "sni": "example.net"
+    }
+}
+
+EOF
+		chmod 755 "$sspcustomconf"
+	fi
+
 	# create user dnsmasq.conf
 	[ ! -d "$dir_dnsmasq" ] && mkdir -p -m 755 "$dir_dnsmasq"
 	for i in dnsmasq.conf hosts ; do
 		[ -f "$dir_storage/$i" ] && mv -n "$dir_storage/$i" "$dir_dnsmasq"
 	done
+	if $(cat "$user_dnsmasq_conf" | grep -q "^conf-dir=/tmp/SSP/gfwlist") ; then
+		sed -i 's:^conf-dir=/tmp/SSP/gfwlist:#conf-dir=/tmp/SSP/gfwlist:g' $user_dnsmasq_conf
+	fi
 	if [ ! -f "$user_dnsmasq_conf" ] ; then
 		cat > "$user_dnsmasq_conf" <<EOF
 # Custom user conf file for dnsmasq
 # Please add needed params only!
 
+### Examples:
 ### Web Proxy Automatic Discovery (WPAD)
 dhcp-option=252,"\n"
 
@@ -474,8 +623,6 @@ dhcp-option=252,"\n"
 
 ### Add local-only domains, queries are answered from hosts or DHCP only
 #local=/router/localdomain/
-
-### Examples:
 
 ### Enable built-in TFTP server
 #enable-tftp
@@ -504,21 +651,11 @@ srv-host=_vlmcs._tcp,my.router,1688,0,100
 EOF
 	fi
 
-	if [ -f /usr/bin/wing ]; then
-		cat >> "$user_dnsmasq_conf" <<EOF
-# Custom domains to gfwlist
-#gfwlist=mit.edu
-#gfwlist=openwrt.org,lede-project.org
-#gfwlist=github.com,github.io,githubusercontent.com
-
-EOF
-	fi
-
 	if [ -d $dir_gfwlist ]; then
 		cat >> "$user_dnsmasq_conf" <<EOF
-### gfwlist related (resolve by port 5353)
+### gfwlist related resolve
 #min-cache-ttl=3600
-#conf-dir=/etc/storage/gfwlist
+#conf-dir=/tmp/SSP/gfwlist
 
 EOF
 	fi
