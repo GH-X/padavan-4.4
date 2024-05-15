@@ -321,6 +321,11 @@
 		#clock-cells = <1>;
 	};
 
+	ethsys: ethsys@1e000000 {
+		compatible = "mediatek,mt7621-ethsys", "syscon";
+		reg = <0x1e000000 0x8000>;
+	};
+
 	raeth: raeth@1e100000 {
 		status = "okay";
 
