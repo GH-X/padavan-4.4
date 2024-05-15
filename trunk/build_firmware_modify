@@ -165,8 +165,14 @@ fi
 if [ "$CONFIG_FIRMWARE_ENABLE_XFS" != "y" ] ; then
 	func_disable_busybox_param "CONFIG_FEATURE_VOLUMEID_XFS"
 fi
-############################# SWAP ####################################
+############################# ZRAM SWAP ###############################
 if [ "$CONFIG_FIRMWARE_ENABLE_SWAP" != "y" ] ; then
+	func_disable_kernel_param "CONFIG_ZPOOL"
+	func_disable_kernel_param "CONFIG_ZSMALLOC"
+	func_disable_kernel_param "CONFIG_ZRAM"
+	func_disable_kernel_param "CONFIG_ZRAM_LZ4_COMPRESS"
+	func_disable_kernel_param "CONFIG_LZ4_COMPRESS"
+	func_disable_kernel_param "CONFIG_LZ4_DECOMPRESS"
 	func_disable_busybox_param "CONFIG_MKSWAP"
 	func_disable_busybox_param "CONFIG_SWAPONOFF"
 fi

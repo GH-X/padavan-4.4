@@ -7,30 +7,40 @@ mount -t sysfs sysfs /sys
 size_etc="6M"
 
 if [ "$1" == "512" ]; then
+	size_swapdisksize="512M"
+	size_swapmemlimit="256M"
 	size_tmp="40M"
 	size_var="5M"
 	tcp_rmem='20480 87380 8388608'
 	tcp_wmem='20480 87380 8388608'
 	tcp_mem='32768 65536 98304'
 elif [ "$1" == "256" ]; then
+	size_swapdisksize="256M"
+	size_swapmemlimit="128M"
 	size_tmp="32M"
 	size_var="4M"
 	tcp_rmem='16384 87380 4194304'
 	tcp_wmem='16384 87380 4194304'
 	tcp_mem='16384 32768 49152'
 elif [ "$1" == "128" ]; then
+	size_swapdisksize="128M"
+	size_swapmemlimit="64M"
 	size_tmp="24M"
 	size_var="3M"
 	tcp_rmem='12288 87380 2097152'
 	tcp_wmem='12288 87380 2097152'
 	tcp_mem='8192 16384 24576'
 elif [ "$1" == "64" ]; then
+	size_swapdisksize="64M"
+	size_swapmemlimit="32M"
 	size_tmp="16M"
 	size_var="2M"
 	tcp_rmem='8192 87380 1048576'
 	tcp_wmem='8192 87380 1048576'
 	tcp_mem='4096 8192 12288'
 elif [ "$1" == "-l" ]; then
+	size_swapdisksize="32M"
+	size_swapmemlimit="16M"
 	size_tmp="8M"
 	size_var="1M"
 	tcp_rmem='4096 87380 524288'
@@ -100,6 +110,17 @@ ln -sf /etc_ro/shells /etc/shells
 ln -sf /etc_ro/profile /etc/profile
 ln -sf /etc_ro/e2fsck.conf /etc/e2fsck.conf
 ln -sf /etc_ro/ipkg.conf /etc/ipkg.conf
+
+# zram swap
+if [ "$(find /dev/ -name zram0)" == "/dev/zram0" ]; then
+	echo "$size_swapdisksize" > /sys/block/zram0/disksize
+	echo "$size_swapmemlimit" > /sys/block/zram0/mem_limit
+	mkswap /dev/zram0
+	swapon /dev/zram0
+	echo 100 > /proc/sys/vm/swappiness
+else
+	echo 0 > /proc/sys/vm/swappiness
+fi
 
 # tune linux kernel
 echo 65536 > /proc/sys/fs/file-max
