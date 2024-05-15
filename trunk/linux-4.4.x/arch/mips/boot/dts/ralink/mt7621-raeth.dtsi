@@ -331,36 +331,58 @@
 		interrupts = <GIC_SHARED 3 IRQ_TYPE_LEVEL_HIGH
 				GIC_SHARED 23 IRQ_TYPE_LEVEL_HIGH>;
 
-		mediatek,ethsys = <&sysc>;
-		mediatek,switch = <&gsw>;
+		mediatek,ethsys = <&ethsys>;
 
 		gmac1-support = "rgmii-1";
 		rgmii-mode-1 = "force-1000";
 		gmac2-support = "rgmii-2";
 		rgmii-mode-2 = "force-1000";
 		gmac1_txq_num = <1>;
-		gmac1_txq_txd_num = <2048>;
+		gmac1_txq_txd_num = <1024>;
 		gmac2_txq_num = <1>;
-		gmac2_txq_txd_num = <2048>;
-		num_rx_desc = <2048>;
+		gmac2_txq_txd_num = <1024>;
+		num_rx_desc = <1024>;
+	};
 
-		gsw: gsw {
-			compatible = "mediatek,mt753x";
-			mt7530,direct-phy-access;
-			interrupt-parent = <&gic>;
-			interrupts = <GIC_SHARED 23 IRQ_TYPE_LEVEL_HIGH>;
+	eth: ethernet@1e100000 {
+		compatible = "mediatek,mt7621-eth", "syscon";
+		reg = <0x1e100000 0xE000>;
 
-			#address-cells = <1>;
-			#size-cells = <0>;
-		};
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-		hnat: hnat@1e100000 {
-			compatible = "mediatek,mtk-hnat_v1";
-			reg = <0x1e100000 0x3000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SHARED 3 IRQ_TYPE_LEVEL_HIGH>;
 
-			resets = <&sysc 0>;
-			reset-names = "mtketh";
-		};
+		mediatek,ethsys = <&ethsys>;
+
+		status = "disabled";
+	};
+
+	gsw: gsw {
+		compatible = "mediatek,mt753x";
+		mt7530,direct-phy-access;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SHARED 23 IRQ_TYPE_LEVEL_HIGH>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+
+	hnat: hnat@1e100000 {
+		status = "okay";
+
+		compatible = "mediatek,mtk-hnat_v1";
+		reg = <0x1e100000 0x3000>;
+
+		resets = <&ethsys 0>;
+		reset-names = "mtketh";
+
+		mtketh-wan = "eth3";
+		mtketh-ppd = "eth2";
+		mtketh-lan = "eth2";
+		ext-devices = "usb0","wwan0","rax0","ra0", "rai0","apclii0","apclix0", "apcli0";
+		mtketh-max-gmac = <2>;
 	};
 
 	sdhci: sdhci@1e130000 {
@@ -371,6 +393,9 @@
 
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SHARED 20 IRQ_TYPE_LEVEL_HIGH>;
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&sdhci_pins>;
 	};
 
 	pcie: pcie@1e140000 {
@@ -437,7 +462,7 @@
 	xhci: usb@1e1c0000 {
 		status = "disabled";
 
-		compatible = "mediatek,mt2701-xhci";
+		compatible = "mediatek,mt7621-xhci", "mediatek,mt2701-xhci";
 		reg = <0x1e1c0000 0x0001000>,
 		      <0x1e1d0700 0x0000100>;
 		reg-names = "mac", "ippc";
@@ -453,7 +478,7 @@
 	u3phy1: usb-phy@1e1d0000 {
 		status = "disabled";
 
-		compatible = "mediatek,generic-tphy-v1";
+		compatible = "mediatek,mt7621-u3phy", "mediatek,mt2701-u3phy", "mediatek,generic-tphy-v1";
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges;
@@ -462,21 +487,21 @@
 		u2port0: usb-phy@0x1e1d0800 {
 			reg = <0x1e1d0800 0x00000100>;
 			#phy-cells = <1>;
-			clocks = <&clock050>;
+			clocks = <&clock125>;
 			clock-names = "ref";
 		};
 
 		u3port0: usb-phy@0x1e1d0900 {
 			reg = <0x1e1d0900 0x00000700>;
 			#phy-cells = <1>;
-			clocks = <&clock025>;
+			clocks = <&clock125>;
 			clock-names = "ref";
 		};
 
 		u2port1: usb-phy@0x1e1d1000 {
 			reg = <0x1e1d1000 0x00000100>;
 			#phy-cells = <1>;
-			clocks = <&clock050>;
+			clocks = <&clock125>;
 			clock-names = "ref";
 		};
 	};
